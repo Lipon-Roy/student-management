@@ -32,7 +32,7 @@ const getSessions = async (req, res, next) => {
 const addSession = async (req, res, next) => {
     try {
         // check session exist or not for the same department
-        const session = await Session({
+        const session = await Session.findOne({
             session: req.body.session,
             department: req.body.department
         });
