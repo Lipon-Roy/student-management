@@ -26,8 +26,10 @@ const addMarks = async (req, res, next) => {
         });
         if (mark && mark._id) throw createError('Marks already added for this student')
 
+        const total = req.body.midOne + req.body.midTwo + req.body.attendance + req.body.presentationOrAssignment + req.body.firstExaminer + req.body.secondExaminer;
         const newMark = new Mark({
-            ...req.body
+            ...req.body,
+            total
         });
         
         await newMark.save();
