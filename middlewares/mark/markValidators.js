@@ -106,18 +106,6 @@ const addMarkValidators = [
             } catch (err) {
                 throw createError(err.message);
             }
-        }),
-    check('thirdExaminer')
-        .isDecimal()
-        .withMessage('Third examiner mark must be number')
-        .custom(async value => {
-            try {
-                if (value < 0 || value > 60) {
-                    throw createError('Third mark must be from 0 to 10');
-                }
-            } catch (err) {
-                throw createError(err.message);
-            }
         })
 ];
 
