@@ -11,7 +11,8 @@ const markSchema = mongoose.Schema(
         semester: {
             type: Number,
             required: true,
-            enum: [1, 2, 3, 4, 5, 6, 7, 8]
+            min: 1,
+            max: 8,
         },
         roll: {
             type: String,
@@ -27,27 +28,45 @@ const markSchema = mongoose.Schema(
         },
         midOne: {
             type: Number,
-            required: true
+            required: true,
+            min: 0,
+            max: 10
         },
         midTwo: {
             type: Number,
-            required: true
+            required: true,
+            min: 0,
+            max: 10
         },
         attendance: {
             type: Number,
-            required: true
+            required: true,
+            min: 0,
+            max: 10
         },
         presentationOrAssignment: {
             type: Number,
-            required: true
+            required: true,
+            min: 0,
+            max: 10
         },
         firstExaminer: {
             type: Number,
-            required: true
+            required: true,
+            min: 0,
+            max: 60
         },
         secondExaminer: {
             type: Number,
-            required: true
+            required: true,
+            min: 0,
+            max: 60
+        },
+        thirdExaminer: {
+            type: Number,
+            min: 0,
+            max: 60,
+            default: 0
         },
         total: {
             type: Number,

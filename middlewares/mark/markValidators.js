@@ -12,12 +12,12 @@ const addMarkValidators = [
         .isLength({ min: 1 })
         .withMessage('Department is required'),
     check('semester')
-        .trim()
-        .custom(value => {
+        .isDecimal()
+        .withMessage('Semester must be decimal')
+        .custom(async value => {
             try {
-                const semesters = [1, 2, 3, 4, 5, 6, 7, 8];
-                if (!semesters.includes(value)) {
-                    throw createError(`semester value must be 1, 2, 3, 4, 5, 6, 7 or 8`);
+                if (value < 1 || value > 8) {
+                    throw createError("Semester must be 1 to 8");
                 }
             } catch (err) {
                 throw createError(err.message);
@@ -36,47 +36,89 @@ const addMarkValidators = [
         .isLength({ min: 1 })
         .withMessage('Course code is required'),
     check('midOne')
-        .trim()
-        .custom(value => {
-            if (value < 0 || value > 10) {
-                throw createError('Mid one mark must be from 0 to 10');
+        .isDecimal()
+        .withMessage('Mid one number must be number')
+        .custom(async value => {
+            try {
+                if (value < 0 || value > 10) {
+                    throw createError('Mid one mark must be from 0 to 10');
+                }
+            } catch (err) {
+                throw createError(err.message);
             }
         }),
     check('midTwo')
-        .trim()
-        .custom(value => {
-            if (value < 0 || value > 10) {
-                throw createError('Mid two mark must be from 0 to 10');
+        .isDecimal()
+        .withMessage('Mid two mark must be number')
+        .custom(async value => {
+            try {
+                if (value < 0 || value > 10) {
+                    throw createError('Mid two mark must be from 0 to 10');
+                }
+            } catch (err) {
+                throw createError(err.message);
             }
         }),
     check('attendance')
-        .trim()
-        .custom(value => {
-            if (value < 0 || value > 10) {
-                throw createError('Attendance marks must be from 0 to 10');
+        .isDecimal()
+        .withMessage('Attendance mark must be number')
+        .custom(async value => {
+            try {
+                if (value < 0 || value > 10) {
+                    throw createError('Attendance mark must be from 0 to 10');
+                }
+            } catch (err) {
+                throw createError(err.message);
             }
         }),
     check('presentationOrAssignment')
-        .trim()
-        .custom(value => {
-            if (value < 0 || value > 10) {
-                throw createError('Presentation or assignment marks must be from 0 to 10');
+        .isDecimal()
+        .withMessage('Presentation mark must be number')
+        .custom(async value => {
+            try {
+                if (value < 0 || value > 10) {
+                    throw createError('Presentation or assignment mark must be from 0 to 10');
+                }
+            } catch (err) {
+                throw createError(err.message);
             }
         }),
     check('firstExaminer')
-        .trim()
-        .custom(value => {
-            if (value < 0 || value > 10) {
-                throw createError('First examiner marks must be from 0 to 60');
+        .isDecimal()
+        .withMessage('First examiner mark must be number')
+        .custom(async value => {
+            try {
+                if (value < 0 || value > 60) {
+                    throw createError('First examiner mark must be from 0 to 10');
+                }
+            } catch (err) {
+                throw createError(err.message);
             }
         }),
     check('secondExaminer')
-        .trim()
-        .custom(value => {
-            if (value < 0 || value > 10) {
-                throw createError('Second examiner marks must be from 0 to 60');
+        .isDecimal()
+        .withMessage('Second examiner mark must be number')
+        .custom(async value => {
+            try {
+                if (value < 0 || value > 60) {
+                    throw createError('Mid two mark must be from 0 to 10');
+                }
+            } catch (err) {
+                throw createError(err.message);
             }
         }),
+    check('thirdExaminer')
+        .isDecimal()
+        .withMessage('Third examiner mark must be number')
+        .custom(async value => {
+            try {
+                if (value < 0 || value > 60) {
+                    throw createError('Third mark must be from 0 to 10');
+                }
+            } catch (err) {
+                throw createError(err.message);
+            }
+        })
 ];
 
 const addMarksValidationHandler = (req, res, next) => {
