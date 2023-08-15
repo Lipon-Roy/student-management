@@ -39,7 +39,8 @@ const addUser = async (req, res, next) => {
         const hashedPassword = await bcrypt.hash(req.body.password, 10);
         const newUser = new User({
             ...req.body,
-            password: hashedPassword
+            password: hashedPassword,
+            
         });
 
         await newUser.save();

@@ -23,15 +23,22 @@ const peopleSchema = mongoose.Schema(
             type: String,
             required: true,
         },
-        email: String,
-        mobile: String,
+        email: {
+            type: String,
+            default: ""
+        },
+        mobile: {
+            type: String,
+            default: ""
+        },
         password: {
             type: String,
             required: true
         },
         drop: {
             type: String,
-            enum: ['year', 'drop']
+            enum: ['year', 'drop', ""],
+            default: ""
         },
         role: {
             type: String,
