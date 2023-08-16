@@ -3,17 +3,15 @@ const { check, validationResult } = require('express-validator');
 const createError = require('http-errors');
 
 const addCourseValidators = [
-    check('courseName')
+    check('course.courseName')
         .trim()
-        .isLength({ min: 2 })
-        .withMessage('Course is required')
-        .isAlpha('en-US', { ignore: ' - ' })
-        .withMessage('Course name must be alphabet'),
-    check('courseCode')
+        .isLength({ min: 4 })
+        .withMessage('Course is required'),
+    check('course.courseCode')
         .trim()
-        .isLength({ min: 1 })
+        .isLength({ min: 4 })
         .withMessage('Course code is required'),
-    check('semester')
+    check('course.semester')
         .isDecimal()
         .withMessage('Semester must be number')
         .custom(async value => {
@@ -25,9 +23,18 @@ const addCourseValidators = [
                 throw createError(err.message);
             }
         }),
-    check('credit')
+    check('course.credit')
         .isDecimal()
-        .withMessage('Credit must be number'),
+        .withMessage('Credit must be number')
+        .custom(async value => {
+            try {
+                if (value < 1 || value > 3) {
+                    throw createError('Credit must be 1 to 3');
+                }
+            } catch(err) {
+                throw createError(err.message)
+            }
+        }),
 ];
 
 const addCourseValidationHandler = (req, res, next) => {

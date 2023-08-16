@@ -4,7 +4,8 @@ const express = require('express');
 // Internal imports
 const checkLogin = require('../middlewares/common/checkLogin');
 const { addSessionValidators, addSessionValidationHandler } = require('../middlewares/session/sessionValidators');
-const { getSession, addSession, getSessions } = require('../controllers/sessionController');
+const { getSession, addSession, getSessions, addCourse } = require('../controllers/sessionController');
+const { addCourseValidators, addCourseValidationHandler } = require('../middlewares/session/courseValidators');
 
 // create router
 const router = express.Router();
@@ -19,6 +20,6 @@ router.get('/', checkLogin, getSessions);
 router.post('/', checkLogin, addSessionValidators, addSessionValidationHandler, addSession);
 
 // add course
-router.put('/course', );
+router.put('/course', addCourseValidators, addCourseValidationHandler, addCourse);
 
 module.exports = router;
