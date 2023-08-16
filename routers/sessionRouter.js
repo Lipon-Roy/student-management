@@ -18,4 +18,7 @@ router.get('/', checkLogin, getSessions);
 // add session
 router.post('/', checkLogin, addSessionValidators, addSessionValidationHandler, addSession);
 
+// add course
+router.put('/course', );
+
 module.exports = router;
