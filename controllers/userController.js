@@ -29,11 +29,7 @@ const getUsers = async (req, res, next) => {
 const addUser = async (req, res, next) => {
     try {
         // check user already exist or not
-        const user = await User.findOne({
-            roll: req.body.roll,
-            department: req.body.department,
-        });
-        if (user) throw createError('Student already exists for this roll number');
+        
 
 
         const hashedPassword = await bcrypt.hash(req.body.password, 10);

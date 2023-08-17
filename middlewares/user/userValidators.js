@@ -1,5 +1,9 @@
 // External imports
 const { check, validationResult } = require('express-validator');
+const createError = require('http-errors');
+
+// Internal imports
+const User = require('../../models/People');
 
 const userValidators = [
     check('username')
@@ -13,7 +17,18 @@ const userValidators = [
         .isNumeric()
         .withMessage('Roll must be numeric')
         .isLength({ min: 8, max: 8 })
-        .withMessage('Roll must be 8 digit'),
+        .withMessage('Roll must be 8 digit')
+        .custom(async value => {
+            try {
+                const user = await User.findOne({
+                    roll: value,
+                    department: req.body.department,
+                });
+                if (user && user._id) throw createError('Student already exists for this roll number');
+            } catch(err) {
+                throw crea
+            }
+        }),
     check('session')
         .trim()
         .isLength({ min: 4 })
