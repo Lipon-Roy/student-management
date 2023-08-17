@@ -3,19 +3,23 @@ const { check, validationResult } = require('express-validator');
 const createError = require('http-errors');
 
 // Internal imports
+const Mark = require('../../models/Mark');
 const User = require('../../models/People');
 
 // marks validators
 const addMarkValidators = [
-    check('department')
+    check('marks.*.department')
         .trim()
         .isLength({ min: 1 })
         .withMessage('Department is required'),
-    check('semester')
+    check('marks.*.semester')
         .isDecimal()
         .withMessage('Semester must be decimal')
-        .custom(async value => {
+        .custom(async (value, {req}) => {
             try {
+                if (value != req.body.marks[0].semester) {
+                    throw createError('Semester must be same for all student')
+                }
                 if (value < 1 || value > 8) {
                     throw createError("Semester must be 1 to 8");
                 }
@@ -23,19 +27,39 @@ const addMarkValidators = [
                 throw createError(err.message);
             }
         }),
-    check('roll')
+    check('marks.*.roll')
         .trim()
         .isLength({ min: 8, max: 8 })
-        .withMessage('Roll must be in 8 length'),
-    check('courseName')
+        .withMessage('Roll must be in 8 length')
+        .custom(async (value, { req }) => {
+            try {
+                const student = await User.findOne({
+                    roll: value,
+                    department: req.body.marks[0].department
+                });
+                if (!student) throw createError(`Student doesn't exists, please check roll`);
+
+                const mark = await Mark.findOne({
+                    roll: value,
+                    semester: req.body.marks[0].semester,
+                    department: req.body.marks[0].department,
+                    courseName: req.body.marks[0].courseName,
+                    courseCode: req.body.marks[0].courseCode
+                });
+                if (mark && mark._id) throw createError(`Marks already exists for roll ${value}`);
+            } catch (err) {
+                throw createError(err.message);
+            }
+        }),
+    check('marks.*.courseName')
         .trim()
-        .isLength({ min: 1 })
+        .isLength({ min: 4 })
         .withMessage('Course name is required'),
-    check('courseCode')
+    check('marks.*.courseCode')
         .trim()
-        .isLength({ min: 1 })
+        .isLength({ min: 4 })
         .withMessage('Course code is required'),
-    check('midOne')
+    check('marks.*.midOne')
         .isDecimal()
         .withMessage('Mid one number must be number')
         .custom(async value => {
@@ -47,7 +71,7 @@ const addMarkValidators = [
                 throw createError(err.message);
             }
         }),
-    check('midTwo')
+    check('marks.*.midTwo')
         .isDecimal()
         .withMessage('Mid two mark must be number')
         .custom(async value => {
@@ -59,7 +83,7 @@ const addMarkValidators = [
                 throw createError(err.message);
             }
         }),
-    check('attendance')
+    check('marks.*.attendance')
         .isDecimal()
         .withMessage('Attendance mark must be number')
         .custom(async value => {
@@ -71,7 +95,7 @@ const addMarkValidators = [
                 throw createError(err.message);
             }
         }),
-    check('presentationOrAssignment')
+    check('marks.*.presentationOrAssignment')
         .isDecimal()
         .withMessage('Presentation mark must be number')
         .custom(async value => {
@@ -83,7 +107,7 @@ const addMarkValidators = [
                 throw createError(err.message);
             }
         }),
-    check('firstExaminer')
+    check('marks.*.firstExaminer')
         .isDecimal()
         .withMessage('First examiner mark must be number')
         .custom(async value => {
@@ -95,7 +119,7 @@ const addMarkValidators = [
                 throw createError(err.message);
             }
         }),
-    check('secondExaminer')
+    check('marks.*.secondExaminer')
         .isDecimal()
         .withMessage('Second examiner mark must be number')
         .custom(async value => {
