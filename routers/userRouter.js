@@ -10,10 +10,10 @@ const checkLogin = require('../middlewares/common/checkLogin');
 const router = express.Router();
 
 // get single user
-router.get('/:id', checkLogin, getUser);
+router.get('/:id', getUser);
 
 // get all users
-router.get('/', checkLogin, getUsers);
+router.get('/', getUsers);
 
 // add user
 router.post('/', userValidators, userValidationHandler, addUser);

@@ -11,13 +11,13 @@ const { addCourseValidators, addCourseValidationHandler } = require('../middlewa
 const router = express.Router();
 
 // get single session
-router.get('/:id', checkLogin, getSession);
+router.get('/:id',getSession);
 
 // get all sessions
-router.get('/', checkLogin, getSessions);
+router.get('/', getSessions);
 
 // add session
-router.post('/', checkLogin, addSessionValidators, addSessionValidationHandler, addSession);
+router.post('/', addSessionValidators, addSessionValidationHandler, addSession);
 
 // add course
 router.put('/course', addCourseValidators, addCourseValidationHandler, addCourse);

@@ -10,6 +10,6 @@ const { addMarks } = require('../controllers/markController');
 const router = express.Router();
 
 // add marks
-router.post('/', checkLogin, addMarkValidators, addMarksValidationHandler, addMarks);
+router.post('/', addMarkValidators, addMarksValidationHandler, addMarks);
 
 module.exports = router;
