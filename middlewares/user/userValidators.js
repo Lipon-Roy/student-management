@@ -18,7 +18,7 @@ const userValidators = [
         .withMessage('Roll must be numeric')
         .isLength({ min: 8, max: 8 })
         .withMessage('Roll must be 8 digit')
-        .custom(async (value, req) => {
+        .custom(async (value, {req}) => {
             try {
                 const user = await User.findOne({
                     roll: value,
