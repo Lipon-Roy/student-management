@@ -9,7 +9,7 @@ const getSession = async (req, res, next) => {
     try {
         const sessions = await Session.findById({_id: req.params.id});
         res.status(200).json({
-            sessions
+            result: sessions
         });
     } catch(err) {
         next(createError(err.message));
@@ -21,7 +21,7 @@ const getSessions = async (req, res, next) => {
     try {
         const sessions = await Session.find();
         res.status(200).json({
-            sessions
+            result: sessions
         });
     } catch(err) {
         next(createError(err.message));

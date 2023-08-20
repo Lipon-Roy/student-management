@@ -9,7 +9,7 @@ const User = require('../models/People');
 const getUser = async (req, res, next) => {
     try {
         const user = await User.findById({_id: req.params.id});
-        res.status(200).json({ user });
+        res.status(200).json({ result: user });
     } catch (err) {
         next(createError(err.message));
     }
@@ -19,7 +19,7 @@ const getUser = async (req, res, next) => {
 const getUsers = async (req, res, next) => {
     try {
         const users = await User.find();
-        res.status(200).json({ users });
+        res.status(200).json({ result: users });
     } catch (err) {
         next(createError(err.message));
     }
