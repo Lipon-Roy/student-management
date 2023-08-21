@@ -28,11 +28,10 @@ const getUsers = async (req, res, next) => {
 // get user sessionwise
 const getUsersInSession = async (req, res, next) => {
     try {
-        console.log(req.body)
         const users = await User.find({
-            currentSession: req.body.currentSession,
-            department: req.body.department
-        });
+            currentSession: req.params.current,
+            department: req.params.department
+        }).sort('roll');
         res.status(200).json({
             result: users
         });
