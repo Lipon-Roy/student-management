@@ -70,7 +70,7 @@ const markSchema = mongoose.Schema(
         },
         total: {
             type: Number,
-            required: true
+            // required: true
         }
     }
 );
