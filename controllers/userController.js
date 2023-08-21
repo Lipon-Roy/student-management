@@ -37,7 +37,7 @@ const getUsersInSession = async (req, res, next) => {
             result: users
         });
     } catch(err) {
-        next(createError(err.message + " ami"));
+        next(createError(err.message));
     }
 }
 

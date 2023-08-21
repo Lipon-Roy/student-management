@@ -8,8 +8,10 @@ const checkLogin = require('../middlewares/common/checkLogin');
 
 // create router
 const router = express.Router();
+
 // get users in session
 router.get('/session', getUsersInSession);
+
 // get single user
 router.get('/:id', getUser);
 
