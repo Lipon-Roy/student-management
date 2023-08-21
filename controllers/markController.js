@@ -6,6 +6,18 @@ const createError = require('http-errors');
 const Mark = require('../models/Mark');
 const User = require('../models/People');
 
+// get all marks
+const getMarks = async (req, res, next) => {
+    try {
+        const marks = await Mark.find();
+        res.status(200).json({
+            result: marks
+        });
+    } catch(err) {
+        next(createError(err.message));
+    }
+}
+
 // add marks
 const addMarks = async (req, res, next) => {
     try {        
@@ -27,5 +39,6 @@ const addMarks = async (req, res, next) => {
 }
 
 module.exports = {
+    getMarks,
     addMarks
 }
