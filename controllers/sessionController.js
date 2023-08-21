@@ -59,21 +59,8 @@ const addSession = async (req, res, next) => {
 // add course
 const addCourse = async (req, res, next) => {
     try {
-        // check course already exist or not
-        const { courseName, courseCode, semester, credit } = req.body.course;
-        const session = await Session.findOne({
-            session: req.body.session,
-            department: req.body.department,
-            courses: {
-                $elemMatch: {courseName: courseName, courseCode: courseCode }
-            }
-        });
-        
-        if (session) {
-            throw createError('This course already exists');
-        }
-        
         // now add this course
+        const { courseName, courseCode, semester, credit } = req.body.course;
         const newCourse = { courseName, courseCode, semester, credit }; 
         await Session.updateOne({
             session: req.body.session

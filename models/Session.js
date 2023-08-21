@@ -11,10 +11,12 @@ const sessionSchema = mongoose.Schema(
             type: String,
             required: true
         },
-        courses: {
-            type: Array,
-            default: [],
-        },
+        courses: [{
+            courseName: String,
+            courseCode: String,
+            semester: Number,
+            credit: Number
+        }],
         totalStudent: Number
     }
 );

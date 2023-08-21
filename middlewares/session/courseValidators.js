@@ -2,15 +2,48 @@
 const { check, validationResult } = require('express-validator');
 const createError = require('http-errors');
 
+// Internal Import
+const Session = require('../../models/Session');
+
 const addCourseValidators = [
     check('course.courseName')
         .trim()
         .isLength({ min: 4 })
-        .withMessage('Course is required'),
+        .withMessage('Course is required')
+        .custom(async (value, {req}) => {
+            try {
+                const { courseName } = req.body.course;
+                const session = await Session.findOne({
+                    session: req.body.session,
+                    department: req.body.department,
+                    "courses.courseName": courseName
+                });
+                if (session && session._id) {
+                    throw createError(`${value} already exist!`);
+                }
+            } catch(err) {
+                throw createError(err.message);
+            }
+        }),
     check('course.courseCode')
         .trim()
         .isLength({ min: 4 })
-        .withMessage('Course code is required'),
+        .withMessage('Course code is required')
+        .custom(async (value, {req}) => {
+            try {
+                const { courseCode } = req.body.course;
+                const session = await Session.findOne({
+                    session: req.body.session,
+                    department: req.body.department,
+                    "courses.courseCode": courseCode
+                });
+                if (session && session._id) {
+                    throw createError(`${value} already exist!`);
+                }
+            } catch(err) {
+                throw createError(err.message);
+            }
+        }),
     check('course.semester')
         .isDecimal()
         .withMessage('Semester must be number')
