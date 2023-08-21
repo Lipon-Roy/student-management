@@ -25,6 +25,21 @@ const getUsers = async (req, res, next) => {
     }
 }
 
+// get user sessionwise
+const getUsersInSession = async (req, res, next) => {
+    try {
+        const users = await User.find({
+            currentSession: req.body.currentSession,
+            department: req.body.department
+        });
+        res.status(200).json({
+            result: users
+        });
+    } catch(err) {
+        next(createError(err.message));
+    }
+}
+
 // add user
 const addUser = async (req, res, next) => {
     try {
@@ -58,5 +73,6 @@ const addUser = async (req, res, next) => {
 module.exports = {
     getUser,
     getUsers,
+    getUsersInSession,
     addUser,
 }
