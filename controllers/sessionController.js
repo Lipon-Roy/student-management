@@ -99,8 +99,8 @@ const addCourse = async (req, res, next) => {
 const getCourse = async (req, res, next) => {
     try {
         const session = await Session.findOne({
-            session: req.body.session,
-            department: req.body.department
+            session: req.params.session,
+            department: req.params.department
         });
 
         const result = [];
@@ -108,7 +108,7 @@ const getCourse = async (req, res, next) => {
             const { courses } = session;
             
             for (let course of courses) {
-                if (course.semester == req.body.semester) {
+                if (course.semester == req.params.semester) {
                     result.push(course)
                 }
             }
