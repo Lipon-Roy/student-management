@@ -108,7 +108,7 @@ const getCourse = async (req, res, next) => {
             const { courses } = session;
             
             for (let course of courses) {
-                if (course.semester == req.params.semester) {
+                if (course.semester == req.body.semester) {
                     result.push(course)
                 }
             }
