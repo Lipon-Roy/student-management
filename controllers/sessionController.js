@@ -20,7 +20,11 @@ const getSession = async (req, res, next) => {
 // get all session
 const getSessions = async (req, res, next) => {
     try {
-        const sessions = await Session.find();// departmentwise session dite hobe.
+        const sessions = await Session.find({
+
+        }).sort({
+            session: 'desc'
+        });// departmentwise session dite hobe.
         res.status(200).json({
             result: sessions
         });
