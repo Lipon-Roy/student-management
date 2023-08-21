@@ -28,6 +28,7 @@ const getUsers = async (req, res, next) => {
 // get user sessionwise
 const getUsersInSession = async (req, res, next) => {
     try {
+        console.log(req.body)
         const users = await User.find({
             currentSession: req.body.currentSession,
             department: req.body.department
@@ -36,7 +37,7 @@ const getUsersInSession = async (req, res, next) => {
             result: users
         });
     } catch(err) {
-        next(createError(err.message));
+        next(createError(err.message + " ami"));
     }
 }
 
