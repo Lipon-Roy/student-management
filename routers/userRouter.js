@@ -16,7 +16,7 @@ router.get('/:id', getUser);
 router.get('/', getUsers);
 
 // get users in session
-router.get('/', getUsersInSession);
+router.get('/session', getUsersInSession);
 
 // add user
 router.post('/', userValidators, userValidationHandler, addUser);
