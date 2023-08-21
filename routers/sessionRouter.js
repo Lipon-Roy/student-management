@@ -17,7 +17,7 @@ router.get('/:id',getSession);
 router.get('/', getSessions);
 
 // get cour in semester
-router.post('/course/', getCourse);
+router.post('/course', getCourse);
 
 // add session
 router.post('/', addSessionValidators, addSessionValidationHandler, addSession);
