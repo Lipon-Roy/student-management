@@ -10,6 +10,7 @@ const userRouter = require('./routers/userRouter');
 const loginRouter = require('./routers/loginRouter');
 const sessionRouter = require('./routers/sessionRouter');
 const markRouter = require('./routers/markRouter');
+const courseRouter = require('./routers/courseRouter');
 
 // App configuration
 const app = express();
@@ -32,6 +33,7 @@ app.get('/', (req, res) => {
 app.use('/user', userRouter);
 app.use('/login', loginRouter);
 app.use('/session', sessionRouter);
+app.use('/course', courseRouter);
 app.use('/mark', markRouter);
 
 // not found handler
