@@ -99,6 +99,5 @@ module.exports = {
     getSession,
     getSessions,
     addSession,
-    addCourse,
-    getCourse
+    addCourse
 }
