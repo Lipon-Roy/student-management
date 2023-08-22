@@ -70,9 +70,22 @@ const addUser = async (req, res, next) => {
     }
 }
 
+// delete user
+const deleteUser = async (req, res, next) => {
+    try {
+        await User.deleteOne({_id: req.params.id});
+        res.status(200).json({
+            message: "Student was deleted successfully deleted"
+        });
+    } catch(err) {
+        next(createError(err.message));
+    }
+}
+
 module.exports = {
     getUser,
     getUsers,
     getUsersInSession,
     addUser,
+    deleteUser
 }
