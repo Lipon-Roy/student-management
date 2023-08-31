@@ -18,9 +18,9 @@ router.get('/', getMarks);
 router.post('/', addMarkValidators, addMarksValidationHandler, addMarks);
 
 // add internal mark for single student
-router.put('/single', singleInternalMarkValidators, singleInternalMarksValidationHandler, addSingleMark);
+router.put('/internal/single', singleInternalMarkValidators, singleInternalMarksValidationHandler, addSingleMark);
 
 // add internal marks for multiple student
-router.put('/multiple', multiInternalMarkValidators, multiInternalMarksValidationHandler, addMultipleMark);
+router.put('/internal/multiple', multiInternalMarkValidators, multiInternalMarksValidationHandler, addMultipleMark);
 
 module.exports = router;
