@@ -6,7 +6,7 @@ const createError = require('http-errors');
 const User = require('../../models/People');
 
 // marks validators
-const singleExternalMarkValidators = [
+const addSingleExternalMarkValidators = [
     check('department')
         .trim()
         .isLength({ min: 3 })
@@ -80,7 +80,7 @@ const singleExternalMarkValidators = [
         })
 ];
 
-const singleExternalMarksValidationHandler = (req, res, next) => {
+const addSingleExternalMarksValidationHandler = (req, res, next) => {
     const errors = validationResult(req);
     const mappedErrors = errors.mapped();
 
@@ -93,6 +93,6 @@ const singleExternalMarksValidationHandler = (req, res, next) => {
 }
 
 module.exports = {
-    singleExternalMarkValidators,
-    singleExternalMarksValidationHandler
+    addSingleExternalMarkValidators,
+    addSingleExternalMarksValidationHandler
 }

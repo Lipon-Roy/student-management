@@ -6,7 +6,7 @@ const createError = require('http-errors');
 const User = require('../../models/People');
 
 // marks validators
-const multiInternalMarkValidators = [
+const addMultiInternalMarkValidators = [
     check('marks.*.department')
         .trim()
         .isLength({ min: 3 })
@@ -56,7 +56,7 @@ const multiInternalMarkValidators = [
         })
 ];
 
-const multiInternalMarksValidationHandler = (req, res, next) => {
+const addMultiInternalMarksValidationHandler = (req, res, next) => {
     const errors = validationResult(req);
     const mappedErrors = errors.mapped();
 
@@ -69,6 +69,6 @@ const multiInternalMarksValidationHandler = (req, res, next) => {
 }
 
 module.exports = {
-    multiInternalMarkValidators,
-    multiInternalMarksValidationHandler
+    addMultiInternalMarkValidators,
+    addMultiInternalMarksValidationHandler
 }
