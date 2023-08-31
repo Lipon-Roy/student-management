@@ -18,49 +18,45 @@ const markSchema = mongoose.Schema(
             type: String,
             required: true
         },
-        courseName: {
-            type: String,
-            required: true,
-        },
-        courseCode: {
-            type: String,
+        courseId: {
+            type: mongoose.ObjectId,
             required: true,
         },
         midOne: {
             type: Number,
-            required: true,
             min: 0,
-            max: 10
+            max: 10,
+            default: 0
         },
         midTwo: {
             type: Number,
-            required: true,
             min: 0,
-            max: 10
+            max: 10,
+            default: 0
         },
         attendance: {
             type: Number,
-            required: true,
             min: 0,
-            max: 10
+            max: 10,
+            default: 0
         },
         presentationOrAssignment: {
             type: Number,
-            required: true,
             min: 0,
-            max: 10
+            max: 10,
+            default: 0
         },
         firstExaminer: {
             type: Number,
-            required: true,
             min: 0,
-            max: 60
+            max: 60,
+            default: 0
         },
         secondExaminer: {
             type: Number,
-            required: true,
             min: 0,
-            max: 60
+            max: 60,
+            default: 0
         },
         thirdExaminer: {
             type: Number,
@@ -68,9 +64,25 @@ const markSchema = mongoose.Schema(
             max: 60,
             default: 0
         },
-        total: {
-            type: Number,
-            // required: true
+        improve: {
+            firstExaminer: {
+                type: Number,
+                min: 0,
+                max: 60,
+                default: 0
+            },
+            secondExaminer: {
+                type: Number,
+                min: 0,
+                max: 60,
+                default: 0
+            },
+            thirdExaminer: {
+                type: Number,
+                min: 0,
+                max: 60,
+                default: 0
+            },
         }
     }
 );

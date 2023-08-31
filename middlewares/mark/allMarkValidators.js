@@ -10,7 +10,7 @@ const User = require('../../models/People');
 const addMarkValidators = [
     check('marks.*.department')
         .trim()
-        .isLength({ min: 1 })
+        .isLength({ min: 3 })
         .withMessage('Department is required'),
     check('marks.*.semester')
         .isDecimal()
