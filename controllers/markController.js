@@ -60,7 +60,13 @@ const addSingleMark = async (req, res, next) => {
             message: `Mark added for ${examName}`
         });
     } catch (err) {
-        res.status(400).json(err.message);
+        res.status(500).json({
+            errors: {
+                common: {
+                    message: err.message
+                }
+            }
+        });
     }
 }
 
@@ -77,11 +83,11 @@ const addMultipleMark = async (req, res, next) => {
 
             let updateDoc = {
                 'updateOne': {
-                    'filter': { 
+                    'filter': {
                         department: m.department,
                         semester: m.semester,
                         roll: m.roll,
-                        courseId: m.courseId 
+                        courseId: m.courseId
                     },
                     'update': { [m.examName]: m.mark },
                     'upsert': true
@@ -95,12 +101,89 @@ const addMultipleMark = async (req, res, next) => {
             message: `Marks added for ${examName}`
         });
     } catch (err) {
-        console.log(err);
-        res.status(400).json(err.message);
+        res.status(500).json({
+            errors: {
+                common: {
+                    message: err.message
+                }
+            }
+        });
     }
 }
 
-// add marks for external
+// add external mark for single student
+const addSingleExternalMark = async (req, res, next) => {
+    try {
+        const { department, semester, roll, courseId, firstExaminer, secondExaminer, thirdExaminer } = req.body;
+        // 64e384d6b12e86454d8d2ce4
+        await Mark.updateOne({
+            department: department,
+            semester: semester,
+            roll: roll,
+            courseId: courseId
+        }, {
+            $set: {// akhane front-end theke jodi third jodi na o pathai tobuo kono problem hobe na.
+                firstExaminer,
+                secondExaminer,
+                thirdExaminer
+            }
+        });
+
+        res.status(200).send({
+            message: `External mark added`
+        });
+    } catch (err) {
+        res.status(500).json({
+            errors: {
+                common: {
+                    message: err.message
+                }
+            }
+        });
+    }
+}
+
+// add external marks for multiple student
+const addMultipleExternalMark = async (req, res, next) => {
+    try {
+        const { marks } = req.body;
+        // 64e384d6b12e86454d8d2ce4
+
+        const bulk = []
+        marks.forEach(m => {
+
+            let updateDoc = {
+                'updateOne': {
+                    'filter': {
+                        department: m.department,
+                        semester: m.semester,
+                        roll: m.roll,
+                        courseId: m.courseId
+                    },
+                    'update': {
+                        firstExaminer: m.firstExaminer,
+                        secondExaminer: m.secondExaminer,
+                        thirdExaminer: m.thirdExaminer
+                    }
+                }
+            }
+            bulk.push(updateDoc)
+        });
+        await Mark.bulkWrite(bulk);
+
+        res.status(200).json({
+            message: `External marks added`
+        });
+    } catch (err) {
+        res.status(500).json({
+            errors: {
+                common: {
+                    message: err.message
+                }
+            }
+        });
+    }
+}
 
 // add lab marks
 
@@ -110,5 +193,7 @@ module.exports = {
     getMarks,
     addMarks,
     addSingleMark,
-    addMultipleMark
+    addMultipleMark,
+    addSingleExternalMark,
+    addMultipleExternalMark
 }
