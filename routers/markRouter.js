@@ -7,7 +7,7 @@ const { addMarkValidators, addMarksValidationHandler } = require('../middlewares
 
 const { addMarks, getMarks, addSingleMark, addMultipleMark, addSingleExternalMark, addMultipleExternalMark } = require('../controllers/markController');
 
-const { addSingleInternalMarkValidators, addSingleInternalMarksValidationHandler } = require('../middlewares/mark/singleInternalMarkValidators');
+const { addSingleInternalMarkValidators, addSingleInternalMarksValidationHandler} = require('../middlewares/mark/singleInternalMarkValidators');
 
 const { addMultiInternalMarkValidators, addMultiInternalMarksValidationHandler } = require('../middlewares/mark/multiInternalMarkValidators');
 
@@ -34,6 +34,6 @@ router.put('/internal/multiple', addMultiInternalMarkValidators, addMultiInterna
 router.put('/external/single', addSingleExternalMarkValidators, addSingleExternalMarksValidationHandler, addSingleExternalMark);
 
 // add external marks for multiple student
-router.put('/external/multiple', addMultiExternalMarkValidators, addMultiExternalMarksValidationHandler, addMultipleExternalMark);
+router.put('/external/multiple', addMultiExternalMarkValidators, addMultiExternalMarksValidationHandler,  addMultipleExternalMark);
 
 module.exports = router;
