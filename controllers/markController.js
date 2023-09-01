@@ -255,7 +255,37 @@ const addMultipleLabMark = async (req, res) => {
     }
 }
 
-// add improvements marks
+// add theory course improvements mark for single student
+const addSingleImproveMark = async (req, res) => {
+    try {
+        const { department, semester, roll, courseId, firstExaminer, secondExaminer, thirdExaminer } = req.body;
+        // 64e384d6b12e86454d8d2ce4
+        await Mark.updateOne({
+            department: department,
+            semester: semester,
+            roll: roll,
+            courseId: courseId
+        }, {
+            $set: {// akhane front-end theke jodi third jodi na o pathai tobuo kono problem hobe na.
+                "improve.firstExaminer": firstExaminer,
+                "improve.secondExaminer": secondExaminer,
+                "improve.thirdExaminer": thirdExaminer
+            }
+        });
+
+        res.status(200).send({
+            message: `Improve mark added`
+        });
+    } catch (err) {
+        res.status(500).json({
+            errors: {
+                common: {
+                    message: err.message
+                }
+            }
+        });
+    }
+}
 
 module.exports = {
     getMarks,
@@ -265,5 +295,6 @@ module.exports = {
     addSingleExternalMark,
     addMultipleExternalMark,
     addSingleLabMark,
-    addMultipleLabMark
+    addMultipleLabMark,
+    addSingleImproveMark,
 }

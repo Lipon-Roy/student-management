@@ -15,7 +15,7 @@ const addMarkValidators = [
     check('marks.*.semester')
         .isDecimal()
         .withMessage('Semester must be decimal')
-        .custom(async (value, {req}) => {
+        .custom(async (value, { req }) => {
             try {
                 if (value != req.body.marks[0].semester) {
                     throw createError('Semester must be same for all student')
@@ -109,7 +109,7 @@ const addMarkValidators = [
         .custom(async value => {
             try {
                 if (value < 0 || value > 60) {
-                    throw createError('First examiner mark must be from 0 to 10');
+                    throw createError('First examiner mark must be from 0 to 60');
                 }
             } catch (err) {
                 throw createError(err.message);
@@ -121,7 +121,19 @@ const addMarkValidators = [
         .custom(async value => {
             try {
                 if (value < 0 || value > 60) {
-                    throw createError('Mid two mark must be from 0 to 10');
+                    throw createError('Second examiner mark must be from 0 to 60');
+                }
+            } catch (err) {
+                throw createError(err.message);
+            }
+        }),
+    check('marks.*.thirdExaminer')
+        .isDecimal()
+        .withMessage('Third examiner mark must be number')
+        .custom(async value => {
+            try {
+                if (value < 0 || value > 60) {
+                    throw createError('Third examiner mark must be from 0 to 60');
                 }
             } catch (err) {
                 throw createError(err.message);

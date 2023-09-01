@@ -72,7 +72,7 @@ const addSingleExternalMarkValidators = [
         .custom(async value => {
             try {
                 if (value < 0 || value > 60) {
-                    throw createError('Second examiner mark must be from 0 to 60');
+                    throw createError('Third examiner mark must be from 0 to 60');
                 }
             } catch (err) {
                 throw createError(err.message);
