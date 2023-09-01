@@ -51,14 +51,10 @@ const addMarkValidators = [
                 throw createError(err.message);
             }
         }),
-    check('marks.*.courseName')
+    check('marks.*.courseId')
         .trim()
         .isLength({ min: 4 })
-        .withMessage('Course name is required'),
-    check('marks.*.courseCode')
-        .trim()
-        .isLength({ min: 4 })
-        .withMessage('Course code is required'),
+        .withMessage('Course id is required'),
     check('marks.*.midOne')
         .isDecimal()
         .withMessage('Mid one number must be number')

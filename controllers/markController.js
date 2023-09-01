@@ -216,6 +216,45 @@ const addSingleLabMark = async (req, res) => {
     }
 }
 
+// add lab mark for multiple student
+const addMultipleLabMark = async (req, res) => {
+    try {
+        const { marks } = req.body;
+        // 64e38506b12e86454d8d2cec
+
+        const bulk = []
+        marks.forEach(m => {
+
+            let updateDoc = {
+                'updateOne': {
+                    'filter': {
+                        department: m.department,
+                        semester: m.semester,
+                        roll: m.roll,
+                        courseId: m.courseId
+                    },
+                    'update': { labTotal: m.labTotal },
+                    'upsert': true
+                }
+            }
+            bulk.push(updateDoc)
+        });
+        await LabMark.bulkWrite(bulk);
+
+        res.status(200).json({
+            message: `Lab marks added for all student`
+        });
+    } catch (err) {
+        res.status(500).json({
+            errors: {
+                common: {
+                    message: err.message
+                }
+            }
+        });
+    }
+}
+
 // add improvements marks
 
 module.exports = {
@@ -226,4 +265,5 @@ module.exports = {
     addSingleExternalMark,
     addMultipleExternalMark,
     addSingleLabMark,
+    addMultipleLabMark
 }

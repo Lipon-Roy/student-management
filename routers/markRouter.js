@@ -5,7 +5,7 @@ const express = require('express');
 const checkLogin = require('../middlewares/common/checkLogin');
 const { addMarkValidators, addMarksValidationHandler } = require('../middlewares/mark/allMarkValidators');
 
-const { addMarks, getMarks, addSingleMark, addMultipleMark, addSingleExternalMark, addMultipleExternalMark, addSingleLabMark } = require('../controllers/markController');
+const { addMarks, getMarks, addSingleMark, addMultipleMark, addSingleExternalMark, addMultipleExternalMark, addSingleLabMark, addMultipleLabMark } = require('../controllers/markController');
 
 const { addSingleInternalMarkValidators, addSingleInternalMarksValidationHandler} = require('../middlewares/mark/singleInternalMarkValidators');
 
@@ -16,6 +16,8 @@ const { addSingleExternalMarkValidators, addSingleExternalMarksValidationHandler
 const { addMultiExternalMarkValidators, addMultiExternalMarksValidationHandler } = require('../middlewares/mark/multiExternalMarksValidators');
 
 const { addSingleLabMarkValidators, addSingleLabMarkValidationHandler} = require('../middlewares/labMark/singleMarkValidators');
+
+const { addMultipleLabMarkValidators, addMultipleLabMarkValidationHandler } = require('../middlewares/labMark/multipleLabMarkValidators');
 
 // create router
 const router = express.Router();
@@ -40,5 +42,8 @@ router.put('/external/multiple', addMultiExternalMarkValidators, addMultiExterna
 
 // add lab mark for single student
 router.put('/lab/single', addSingleLabMarkValidators, addSingleLabMarkValidationHandler, addSingleLabMark);
+
+// add lab marks for multiple student
+router.put('/lab/multiple', addMultipleLabMarkValidators, addMultipleLabMarkValidationHandler, addMultipleLabMark);
 
 module.exports = router;

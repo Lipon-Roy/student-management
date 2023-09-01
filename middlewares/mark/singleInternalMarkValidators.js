@@ -41,7 +41,7 @@ const addSingleInternalMarkValidators = [
     check('courseId')
         .trim()
         .isLength({ min: 24, max: 24 })
-        .withMessage('Course name is required'),
+        .withMessage('Course id is required'),
     check('mark')
         .isDecimal()
         .withMessage('Mark must be number')

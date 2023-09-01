@@ -41,7 +41,7 @@ const addSingleExternalMarkValidators = [
     check('courseId')
         .trim()
         .isLength({ min: 24, max: 24 })
-        .withMessage('Course name is required'),
+        .withMessage('Course id is required'),
     check('firstExaminer')
         .isDecimal()
         .withMessage('Mark must be number')

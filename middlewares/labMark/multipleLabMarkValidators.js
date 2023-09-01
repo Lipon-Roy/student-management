@@ -6,12 +6,12 @@ const createError = require('http-errors');
 const User = require('../../models/People');
 
 // marks validators
-const addSingleLabMarkValidators = [
-    check('department')
+const addMultipleLabMarkValidators = [
+    check('marks.*.department')
         .trim()
         .isLength({ min: 3 })
         .withMessage('Department is required'),
-    check('semester')
+    check('marks.*.semester')
         .isDecimal()
         .withMessage('Semester must be decimal')
         .custom(async (value) => {
@@ -23,7 +23,7 @@ const addSingleLabMarkValidators = [
                 throw createError(err.message);
             }
         }),
-    check('roll')
+    check('marks.*.roll')
         .trim()
         .isLength({ min: 8, max: 8 })
         .withMessage('Roll must be in 8 length')
@@ -31,24 +31,24 @@ const addSingleLabMarkValidators = [
             try {
                 const student = await User.findOne({
                     roll: value,
-                    department: req.body.department
+                    department: req.body.marks[0].department
                 });
                 if (!student) throw createError(`Student doesn't exists, please check roll`);
             } catch (err) {
                 throw createError(err.message);
             }
         }),
-    check('courseId')
+    check('marks.*.courseId')
         .trim()
         .isLength({ min: 24, max: 24 })
         .withMessage('Course id is required'),
-    check('labTotal')
+    check('marks.*.labTotal')
         .isDecimal()
         .withMessage('Mark must be number')
         .custom(async value => {
             try {
                 if (value < 0 || value > 100) {
-                    throw createError('Lab mark must be 0 to 100');
+                    throw createError('Lab mark must be from 0 to 100');
                 }
             } catch (err) {
                 throw createError(err.message);
@@ -56,7 +56,7 @@ const addSingleLabMarkValidators = [
         })
 ];
 
-const addSingleLabMarkValidationHandler = (req, res, next) => {
+const addMultipleLabMarkValidationHandler = (req, res, next) => {
     const errors = validationResult(req);
     const mappedErrors = errors.mapped();
 
@@ -69,6 +69,6 @@ const addSingleLabMarkValidationHandler = (req, res, next) => {
 }
 
 module.exports = {
-    addSingleLabMarkValidators,
-    addSingleLabMarkValidationHandler
+    addMultipleLabMarkValidators,
+    addMultipleLabMarkValidationHandler
 }
