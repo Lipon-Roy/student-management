@@ -21,10 +21,10 @@ const getSession = async (req, res, next) => {
 const getSessions = async (req, res, next) => {
     try {
         const sessions = await Session.find({
-
+            department: req.params.department
         }).sort({
             session: 'desc'
-        });// departmentwise session dite hobe.
+        }).limit(10);
         res.status(200).json({
             result: sessions
         });

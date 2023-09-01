@@ -14,7 +14,7 @@ const router = express.Router();
 router.get('/:id',getSession);
 
 // get all sessions
-router.get('/', getSessions);
+router.get('/department/:department', getSessions);
 
 // add session
 router.post('/', addSessionValidators, addSessionValidationHandler, addSession);
