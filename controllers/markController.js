@@ -4,7 +4,7 @@ const createError = require('http-errors');
 
 // Internal imports
 const Mark = require('../models/Mark');
-const User = require('../models/People');
+const LabMark = require('../models/LabMark');
 
 // get all marks
 const getMarks = async (req, res, next) => {
@@ -185,7 +185,36 @@ const addMultipleExternalMark = async (req, res, next) => {
     }
 }
 
-// add lab marks
+// add lab mark for single student
+const addSingleLabMark = async (req, res) => {
+    try {
+        const { department, semester, roll, courseId, labTotal } = req.body;
+        await LabMark.updateOne({
+            department,
+            semester,
+            roll,
+            courseId
+        }, {
+            $set: {
+                labTotal
+            }
+        }, {
+            upsert: true
+        });
+
+        res.status(201).json({
+            message: 'Lab mark successfully added'
+        });
+    } catch(err) {
+        res.status(500).json({
+            errors: {
+                common: {
+                    message: err.message
+                }
+            }
+        });
+    }
+}
 
 // add improvements marks
 
@@ -195,5 +224,6 @@ module.exports = {
     addSingleMark,
     addMultipleMark,
     addSingleExternalMark,
-    addMultipleExternalMark
+    addMultipleExternalMark,
+    addSingleLabMark,
 }
