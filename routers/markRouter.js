@@ -5,7 +5,7 @@ const express = require('express');
 const checkLogin = require('../middlewares/common/checkLogin');
 const { addMarkValidators, addMarksValidationHandler } = require('../middlewares/mark/allMarkValidators');
 
-const { addMarks, getMarks, addSingleMark, addMultipleMark, addSingleExternalMark, addMultipleExternalMark, addSingleLabMark, addMultipleLabMark, addSingleImproveMark } = require('../controllers/markController');
+const { addMarks, getMarks, addSingleMark, addMultipleMark, addSingleExternalMark, addMultipleExternalMark, addSingleLabMark, addMultipleLabMark, addSingleImproveMark, getLabMarks } = require('../controllers/markController');
 
 const { addSingleInternalMarkValidators, addSingleInternalMarksValidationHandler} = require('../middlewares/mark/singleInternalMarkValidators');
 
@@ -24,6 +24,9 @@ const router = express.Router();
 
 // get all marks
 router.get('/', getMarks);
+
+// get all lab marks
+router.get('/lab', getLabMarks);
 
 // add all marks for all student for the individual session
 router.post('/', addMarkValidators, addMarksValidationHandler, addMarks);

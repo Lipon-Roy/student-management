@@ -18,6 +18,17 @@ const getMarks = async (req, res, next) => {
     }
 }
 
+const getLabMarks = async (req, res, next) => {
+    try {
+        const marks = await LabMark.find();
+        res.status(200).json({
+            result: marks
+        });
+    } catch (err) {
+        next(createError(err.message));
+    }
+}
+
 // add marks
 const addMarks = async (req, res, next) => {
     try {
@@ -289,6 +300,7 @@ const addSingleImproveMark = async (req, res) => {
 
 module.exports = {
     getMarks,
+    getLabMarks,
     addMarks,
     addSingleMark,
     addMultipleMark,
