@@ -7,13 +7,33 @@ const Mark = require('../models/Mark');
 const LabMark = require('../models/LabMark');
 
 // get all marks
-const getMarks = async (req, res, next) => {
+const getAllMarks = async (req, res, next) => {
     try {
         const marks = await Mark.find();
         res.status(200).json({
             result: marks
         });
     } catch (err) {
+        next(createError(err.message));
+    }
+}
+
+// get internal mark for single student
+const getSingleMark = async (req, res, next) => {
+    const { dept, semester, course, roll } = req.params;
+
+    try {
+        const mark = await Mark.findOne({
+            department: dept,
+            semester,
+            courseId: course,
+            roll
+        });
+
+        res.status(200).json({
+            result: mark
+        });
+    } catch(err) {
         next(createError(err.message));
     }
 }
@@ -50,10 +70,10 @@ const addMarks = async (req, res, next) => {
 }
 
 // add internal mark for single student
-const addSingleMark = async (req, res, next) => {
+const addSingleInternalMark = async (req, res, next) => {
     try {
-        const { department, semester, roll, courseId, examName, mark } = req.body;
-        const name = examName;
+        const { department, semester, roll, courseId, midOne, midTwo, attendance, presentationOrAssignment } = req.body;
+        
         // 64e384d6b12e86454d8d2ce4
         await Mark.updateOne({
             department: department,
@@ -62,13 +82,16 @@ const addSingleMark = async (req, res, next) => {
             courseId: courseId
         }, {
             $set: {
-                [name]: mark
+                midOne,
+                midTwo,
+                attendance,
+                presentationOrAssignment
             }
         }, {
             upsert: true
         });
         res.status(200).send({
-            message: `Mark added for ${examName}`
+            message: `Internal marks updated successfully`
         });
     } catch (err) {
         res.status(500).json({
@@ -299,10 +322,11 @@ const addSingleImproveMark = async (req, res) => {
 }
 
 module.exports = {
-    getMarks,
+    getAllMarks,
+    getSingleMark,
     getLabMarks,
     addMarks,
-    addSingleMark,
+    addSingleInternalMark,
     addMultipleMark,
     addSingleExternalMark,
     addMultipleExternalMark,

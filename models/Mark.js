@@ -6,7 +6,6 @@ const markSchema = mongoose.Schema(
         department: {
             type: String,
             required: true
-            //enum korar plan ase pore
         },
         semester: {
             type: Number,
@@ -63,26 +62,6 @@ const markSchema = mongoose.Schema(
             min: 0,
             max: 60,
             default: 0
-        },
-        improve: {
-            firstExaminer: {
-                type: Number,
-                min: 0,
-                max: 60,
-                default: 0
-            },
-            secondExaminer: {
-                type: Number,
-                min: 0,
-                max: 60,
-                default: 0
-            },
-            thirdExaminer: {
-                type: Number,
-                min: 0,
-                max: 60,
-                default: 0
-            },
         }
     }
 );
