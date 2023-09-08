@@ -5,7 +5,7 @@ const express = require('express');
 const checkLogin = require('../middlewares/common/checkLogin');
 const { addMarkValidators, addMarksValidationHandler } = require('../middlewares/mark/allMarkValidators');
 
-const { addMarks, getAllMarks, addSingleInternalMark, addMultipleMark, addSingleExternalMark, addMultipleExternalMark, addSingleLabMark, addMultipleLabMark, addSingleImproveMark, getLabMarks, getSingleMark } = require('../controllers/markController');
+const { addMarks, getAllMarks, addSingleInternalMark, addMultipleInternalMark, addSingleExternalMark, addMultipleExternalMark, addSingleLabMark, addMultipleLabMark, addSingleImproveMark, getLabMarks, getSingleMark } = require('../controllers/markController');
 
 const { addSingleInternalMarkValidators, addSingleInternalMarksValidationHandler} = require('../middlewares/mark/singleInternalMarkValidators');
 
@@ -38,7 +38,7 @@ router.post('/', addMarkValidators, addMarksValidationHandler, addMarks);
 router.put('/internal/single', addSingleInternalMarkValidators, addSingleInternalMarksValidationHandler, addSingleInternalMark);
 
 // add internal marks for multiple student
-router.put('/internal/multiple', addMultiInternalMarkValidators, addMultiInternalMarksValidationHandler, addMultipleMark);
+router.put('/internal/multiple', addMultiInternalMarkValidators, addMultiInternalMarksValidationHandler, addMultipleInternalMark);
 
 // add external mark for single student
 router.put('/external/single', addSingleExternalMarkValidators, addSingleExternalMarksValidationHandler, addSingleExternalMark);

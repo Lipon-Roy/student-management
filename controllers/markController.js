@@ -105,15 +105,14 @@ const addSingleInternalMark = async (req, res, next) => {
 }
 
 // add internal mark for multiple student
-const addMultipleMark = async (req, res, next) => {
+const addMultipleInternalMark = async (req, res, next) => {
     try {
         const { marks } = req.body;
         // 64e384d6b12e86454d8d2ce4
 
-        let examName;
         const bulk = []
         marks.forEach(m => {
-            examName = m.examName;
+            const { midOne, midTwo, attendance, presentationOrAssignment } = m;
 
             let updateDoc = {
                 'updateOne': {
@@ -123,7 +122,12 @@ const addMultipleMark = async (req, res, next) => {
                         roll: m.roll,
                         courseId: m.courseId
                     },
-                    'update': { [m.examName]: m.mark },
+                    'update': {
+                        midOne,
+                        midTwo,
+                        attendance,
+                        presentationOrAssignment
+                    },
                     'upsert': true
                 }
             }
@@ -132,7 +136,7 @@ const addMultipleMark = async (req, res, next) => {
         await Mark.bulkWrite(bulk);
 
         res.status(200).json({
-            message: `Marks added for ${examName}`
+            message: `Internal marks added successfully for all student`
         });
     } catch (err) {
         res.status(500).json({
@@ -327,7 +331,7 @@ module.exports = {
     getLabMarks,
     addMarks,
     addSingleInternalMark,
-    addMultipleMark,
+    addMultipleInternalMark,
     addSingleExternalMark,
     addMultipleExternalMark,
     addSingleLabMark,

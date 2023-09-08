@@ -42,13 +42,49 @@ const addMultiInternalMarkValidators = [
         .trim()
         .isLength({ min: 24, max: 24 })
         .withMessage('Course id is required'),
-    check('marks.*.mark')
+    check('marks.*.midOne')
         .isDecimal()
-        .withMessage('Mark must be number')
+        .withMessage('Mid one number must be number')
         .custom(async value => {
             try {
                 if (value < 0 || value > 10) {
-                    throw createError('Mark must be from 0 to 10');
+                    throw createError('Mid one mark must be from 0 to 10');
+                }
+            } catch (err) {
+                throw createError(err.message);
+            }
+        }),
+    check('marks.*.midTwo')
+        .isDecimal()
+        .withMessage('Mid two mark must be number')
+        .custom(async value => {
+            try {
+                if (value < 0 || value > 10) {
+                    throw createError('Mid two mark must be from 0 to 10');
+                }
+            } catch (err) {
+                throw createError(err.message);
+            }
+        }),
+    check('marks.*.attendance')
+        .isDecimal()
+        .withMessage('Attendance mark must be number')
+        .custom(async value => {
+            try {
+                if (value < 0 || value > 10) {
+                    throw createError('Attendance mark must be from 0 to 10');
+                }
+            } catch (err) {
+                throw createError(err.message);
+            }
+        }),
+    check('marks.*.presentationOrAssignment')
+        .isDecimal()
+        .withMessage('Presentation mark must be number')
+        .custom(async value => {
+            try {
+                if (value < 0 || value > 10) {
+                    throw createError('Presentation or assignment mark must be from 0 to 10');
                 }
             } catch (err) {
                 throw createError(err.message);
