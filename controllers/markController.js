@@ -302,6 +302,8 @@ const addSingleImproveMark = async (req, res) => {
     try {
         const { department, semester, roll, courseId, firstExaminer, secondExaminer, thirdExaminer } = req.body;
         // 64e384d6b12e86454d8d2ce4
+        // akhane age check kore nibo jodi improve hoi tahole update korte dibo.
+        // ata porer kaj
         await Mark.updateOne({
             department: department,
             semester: semester,
@@ -309,9 +311,9 @@ const addSingleImproveMark = async (req, res) => {
             courseId: courseId
         }, {
             $set: {// akhane front-end theke jodi third jodi na o pathai tobuo kono problem hobe na.
-                "improve.firstExaminer": firstExaminer,
-                "improve.secondExaminer": secondExaminer,
-                "improve.thirdExaminer": thirdExaminer
+                firstExaminer,
+                secondExaminer,
+                thirdExaminer
             }
         });
 
