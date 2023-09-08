@@ -165,6 +165,8 @@ const addSingleExternalMark = async (req, res, next) => {
                 secondExaminer,
                 thirdExaminer
             }
+        }, {
+            upsert: true
         });
 
         res.status(200).send({
@@ -189,6 +191,7 @@ const addMultipleExternalMark = async (req, res, next) => {
 
         const bulk = []
         marks.forEach(m => {
+            const { firstExaminer, secondExaminer, thirdExaminer } = m;
 
             let updateDoc = {
                 'updateOne': {
@@ -199,10 +202,11 @@ const addMultipleExternalMark = async (req, res, next) => {
                         courseId: m.courseId
                     },
                     'update': {
-                        firstExaminer: m.firstExaminer,
-                        secondExaminer: m.secondExaminer,
-                        thirdExaminer: m.thirdExaminer
-                    }
+                        firstExaminer,
+                        secondExaminer,
+                        thirdExaminer
+                    },
+                    upsert: true
                 }
             }
             bulk.push(updateDoc)
