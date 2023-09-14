@@ -38,6 +38,26 @@ const getSingleMark = async (req, res, next) => {
     }
 }
 
+// get mark which are isThirdExaminer true
+const getIsThirdExaminer = async (req, res, next) => {
+    const { dept, semester, course } = req.params;
+
+    try {
+        const marks = await Mark.find({
+            department: dept,
+            semester,
+            courseId: course,
+            isThirdExaminer: true
+        });
+
+        res.status(200).json({
+            result: marks
+        });
+    } catch(err) {
+        next(createError(err.message));
+    }
+}
+
 const getLabMarks = async (req, res, next) => {
     try {
         const marks = await LabMark.find();
@@ -334,6 +354,7 @@ const addSingleImproveMark = async (req, res) => {
 module.exports = {
     getAllMarks,
     getSingleMark,
+    getIsThirdExaminer,
     getLabMarks,
     addMarks,
     addSingleInternalMark,
