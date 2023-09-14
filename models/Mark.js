@@ -57,6 +57,10 @@ const markSchema = mongoose.Schema(
             max: 60,
             default: 0
         },
+        isThirdExaminer: {
+            type: Boolean,
+            default: false
+        },
         thirdExaminer: {
             type: Number,
             min: 0,

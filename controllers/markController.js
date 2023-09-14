@@ -152,7 +152,7 @@ const addMultipleInternalMark = async (req, res, next) => {
 // add external mark for single student
 const addSingleExternalMark = async (req, res, next) => {
     try {
-        const { department, semester, roll, courseId, firstExaminer, secondExaminer, thirdExaminer } = req.body;
+        const { department, semester, roll, courseId, firstExaminer, secondExaminer } = req.body;
         // 64e384d6b12e86454d8d2ce4
         await Mark.updateOne({
             department: department,
@@ -160,10 +160,10 @@ const addSingleExternalMark = async (req, res, next) => {
             roll: roll,
             courseId: courseId
         }, {
-            $set: {// akhane front-end theke jodi third jodi na o pathai tobuo kono problem hobe na.
+            $set: {
                 firstExaminer,
                 secondExaminer,
-                thirdExaminer
+                isThirdExaminer: Math.abs(firstExaminer - secondExaminer) >= 12
             }
         }, {
             upsert: true
@@ -191,7 +191,7 @@ const addMultipleExternalMark = async (req, res, next) => {
 
         const bulk = []
         marks.forEach(m => {
-            const { firstExaminer, secondExaminer, thirdExaminer } = m;
+            const { firstExaminer, secondExaminer } = m;
 
             let updateDoc = {
                 'updateOne': {
@@ -204,7 +204,7 @@ const addMultipleExternalMark = async (req, res, next) => {
                     'update': {
                         firstExaminer,
                         secondExaminer,
-                        thirdExaminer
+                        isThirdExaminer: Math.abs(firstExaminer - secondExaminer) >= 12
                     },
                     upsert: true
                 }
