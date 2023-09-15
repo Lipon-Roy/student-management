@@ -247,6 +247,48 @@ const addMultipleExternalMark = async (req, res, next) => {
     }
 }
 
+// add third examiner mark for multiple student
+const addThirdExaminerMarks = async (req, res, next) => {
+    try {
+        const { marks } = req.body;
+        // 64e384d6b12e86454d8d2ce4
+
+        const bulk = []
+        marks.forEach(m => {
+            const { thirdExaminer } = m;
+
+            let updateDoc = {
+                'updateOne': {
+                    'filter': {
+                        department: m.department,
+                        semester: m.semester,
+                        roll: m.roll,
+                        courseId: m.courseId
+                    },
+                    'update': {
+                        thirdExaminer,
+                        isThirdExaminer: false
+                    }
+                }
+            }
+            bulk.push(updateDoc)
+        });
+        await Mark.bulkWrite(bulk);
+
+        res.status(200).json({
+            message: `Third examiner marks added`
+        });
+    } catch (err) {
+        res.status(500).json({
+            errors: {
+                common: {
+                    message: err.message
+                }
+            }
+        });
+    }
+}
+
 // add lab mark for single student
 const addSingleLabMark = async (req, res) => {
     try {
@@ -361,6 +403,7 @@ module.exports = {
     addMultipleInternalMark,
     addSingleExternalMark,
     addMultipleExternalMark,
+    addThirdExaminerMarks,
     addSingleLabMark,
     addMultipleLabMark,
     addSingleImproveMark,

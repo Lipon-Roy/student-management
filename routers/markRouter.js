@@ -5,7 +5,7 @@ const express = require('express');
 const checkLogin = require('../middlewares/common/checkLogin');
 const { addMarkValidators, addMarksValidationHandler } = require('../middlewares/mark/allMarkValidators');
 
-const { addMarks, getAllMarks, addSingleInternalMark, addMultipleInternalMark, addSingleExternalMark, addMultipleExternalMark, addSingleLabMark, addMultipleLabMark, addSingleImproveMark, getLabMarks, getSingleMark, getIsThirdExaminer } = require('../controllers/markController');
+const { addMarks, getAllMarks, addSingleInternalMark, addMultipleInternalMark, addSingleExternalMark, addMultipleExternalMark, addSingleLabMark, addMultipleLabMark, addSingleImproveMark, getLabMarks, getSingleMark, getIsThirdExaminer, addThirdExaminerMarks } = require('../controllers/markController');
 
 const { addSingleInternalMarkValidators, addSingleInternalMarksValidationHandler} = require('../middlewares/mark/singleInternalMarkValidators');
 
@@ -14,6 +14,8 @@ const { addMultiInternalMarkValidators, addMultiInternalMarksValidationHandler }
 const { addSingleExternalMarkValidators, addSingleExternalMarksValidationHandler } = require('../middlewares/mark/singleExternalMarkValidators');
 
 const { addMultiExternalMarkValidators, addMultiExternalMarksValidationHandler } = require('../middlewares/mark/multiExternalMarksValidators');
+
+const { addThirdExaminerMarkValidator, addThirdExaminerMarkValidationHandler } = require('../middlewares/mark/multiThirdMarkValidators');
 
 const { addSingleLabMarkValidators, addSingleLabMarkValidationHandler} = require('../middlewares/labMark/singleMarkValidators');
 
@@ -48,6 +50,9 @@ router.put('/external/single', addSingleExternalMarkValidators, addSingleExterna
 
 // add external marks for multiple student
 router.put('/external/multiple', addMultiExternalMarkValidators, addMultiExternalMarksValidationHandler,  addMultipleExternalMark);
+
+// add third examiner external marks for multiple student
+router.put('/third/multiple', addThirdExaminerMarkValidator, addThirdExaminerMarkValidationHandler, addThirdExaminerMarks);
 
 // add lab mark for single student
 router.put('/lab/single', addSingleLabMarkValidators, addSingleLabMarkValidationHandler, addSingleLabMark);
