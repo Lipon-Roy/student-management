@@ -1,7 +1,7 @@
 // External import
 const mongoose = require('mongoose');
 
-const markSchema = mongoose.Schema(
+const improveMarkSchema = mongoose.Schema(
     {
         department: {
             type: String,
@@ -46,6 +46,6 @@ const markSchema = mongoose.Schema(
     }
 );
 
-const Mark = mongoose.model('Mark', markSchema);
+const ImproveMark = mongoose.model('Improve', improveMarkSchema);
 
-module.exports = Mark;
+module.exports = ImproveMark;

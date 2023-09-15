@@ -5,6 +5,7 @@ const createError = require('http-errors');
 // Internal imports
 const Mark = require('../models/Mark');
 const LabMark = require('../models/LabMark');
+const ImproveMark = require('../models/ImproveMark');
 
 // get all marks
 const getAllMarks = async (req, res, next) => {
@@ -362,21 +363,22 @@ const addMultipleLabMark = async (req, res) => {
 // add theory course improvements mark for single student
 const addSingleImproveMark = async (req, res) => {
     try {
-        const { department, semester, roll, courseId, firstExaminer, secondExaminer, thirdExaminer } = req.body;
+        const { department, semester, roll, courseId, firstExaminer, secondExaminer } = req.body;
         // 64e384d6b12e86454d8d2ce4
-        // akhane age check kore nibo jodi improve hoi tahole update korte dibo.
-        // ata porer kaj
-        await Mark.updateOne({
+        // akhane number check kore mul mark ta update kore dibo
+        await ImproveMark.updateOne({
             department: department,
             semester: semester,
             roll: roll,
             courseId: courseId
         }, {
-            $set: {// akhane front-end theke jodi third jodi na o pathai tobuo kono problem hobe na.
+            $set: {
                 firstExaminer,
                 secondExaminer,
-                thirdExaminer
+                isThirdExaminer: Math.abs(firstExaminer - secondExaminer) >= 12
             }
+        }, {
+            upsert: true
         });
 
         res.status(200).send({
