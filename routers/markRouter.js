@@ -5,7 +5,7 @@ const express = require('express');
 const checkLogin = require('../middlewares/common/checkLogin');
 const { addMarkValidators, addMarksValidationHandler } = require('../middlewares/mark/allMarkValidators');
 
-const { addMarks, getAllMarks, addSingleInternalMark, addMultipleInternalMark, addSingleExternalMark, addMultipleExternalMark, addSingleLabMark, addMultipleLabMark, addSingleImproveMark, getLabMarks, getSingleMark, getIsThirdExaminer, addThirdExaminerMarks } = require('../controllers/markController');
+const { addMarks, getAllMarks, addSingleInternalMark, addMultipleInternalMark, addSingleExternalMark, addMultipleExternalMark, addSingleLabMark, addMultipleLabMark, addSingleImproveMark, getLabMarks, getSingleMark, getIsThirdExaminer, addThirdExaminerMarks, getImproveMark } = require('../controllers/markController');
 
 const { addSingleInternalMarkValidators, addSingleInternalMarksValidationHandler} = require('../middlewares/mark/singleInternalMarkValidators');
 
@@ -32,6 +32,9 @@ router.get('/:dept/:semester/:course/:roll', getSingleMark);
 
 // get mark which are isThirdExaminer true
 router.get('/:dept/:semester/:course', getIsThirdExaminer);
+
+// get improve third examiner mark
+router.get('/improve/:dept/:semester/:course/:roll', getImproveMark);
 
 // get all lab marks
 router.get('/lab', getLabMarks);
