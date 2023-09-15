@@ -5,7 +5,7 @@ const express = require('express');
 const checkLogin = require('../middlewares/common/checkLogin');
 const { addMarkValidators, addMarksValidationHandler } = require('../middlewares/mark/allMarkValidators');
 
-const { addMarks, getAllMarks, addSingleInternalMark, addMultipleInternalMark, addSingleExternalMark, addMultipleExternalMark, addSingleLabMark, addMultipleLabMark, addSingleImproveMark, getLabMarks, getSingleMark, getIsThirdExaminer, addThirdExaminerMarks, getImproveMark } = require('../controllers/markController');
+const { addMarks, getAllMarks, addSingleInternalMark, addMultipleInternalMark, addSingleExternalMark, addMultipleExternalMark, addSingleLabMark, addMultipleLabMark, addSingleImproveMark, getLabMarks, getSingleMark, getIsThirdExaminer, addThirdExaminerMarks, getImproveMark, addSingleThirdImproveMark } = require('../controllers/markController');
 
 const { addSingleInternalMarkValidators, addSingleInternalMarksValidationHandler} = require('../middlewares/mark/singleInternalMarkValidators');
 
@@ -65,5 +65,8 @@ router.put('/lab/multiple', addMultipleLabMarkValidators, addMultipleLabMarkVali
 
 // add theory course improvements mark for single student
 router.put('/improve/single', addSingleExternalMarkValidators, addSingleExternalMarksValidationHandler, addSingleImproveMark);
+
+// add third examiner mark for theory course improvements
+router.put('/improve/third', addSingleThirdImproveMark);
 
 module.exports = router;

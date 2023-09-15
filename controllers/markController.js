@@ -415,6 +415,38 @@ const addSingleImproveMark = async (req, res) => {
     }
 }
 
+// add third examiner mark for theory course improvement
+const addSingleThirdImproveMark = async (req, res) => {
+    try {
+        const { department, semester, roll, courseId, thirdExaminer } = req.body;
+        // 64e384d6b12e86454d8d2ce4
+        // akhane number check kore mul mark ta update kore dibo
+        await ImproveMark.updateOne({
+            department: department,
+            semester: semester,
+            roll: roll,
+            courseId: courseId
+        }, {
+            $set: {
+                thirdExaminer,
+                isThirdExaminer: false
+            }
+        });
+
+        res.status(200).send({
+            message: `Third examiner mark added for improvements`
+        });
+    } catch (err) {
+        res.status(500).json({
+            errors: {
+                common: {
+                    message: err.message
+                }
+            }
+        });
+    }
+}
+
 module.exports = {
     getAllMarks,
     getSingleMark,
@@ -430,4 +462,5 @@ module.exports = {
     addSingleLabMark,
     addMultipleLabMark,
     addSingleImproveMark,
+    addSingleThirdImproveMark
 }
