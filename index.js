@@ -7,6 +7,7 @@ const mongoose = require('mongoose');
 // Internal imports
 const { notFoundHandler, errorHandler } = require('./middlewares/common/errorHandler');
 const userRouter = require('./routers/userRouter');
+const userInfoRouter = require('./routers/userInfoRouter');
 const loginRouter = require('./routers/loginRouter');
 const sessionRouter = require('./routers/sessionRouter');
 const markRouter = require('./routers/markRouter');
@@ -31,6 +32,7 @@ app.get('/', (req, res) => {
 });
 
 app.use('/user', userRouter);
+app.use('/user-info', userInfoRouter);
 app.use('/login', loginRouter);
 app.use('/session', sessionRouter);
 app.use('/course', courseRouter);
