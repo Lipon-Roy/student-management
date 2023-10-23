@@ -1,7 +1,5 @@
 // external imports
 const createError = require('http-errors');
-const ExcelJS = require('exceljs');
-const path = require('path');
 
 // internal imports
 const Mark = require('../models/Mark');
