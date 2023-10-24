@@ -6,8 +6,9 @@ const Mark = require('../models/Mark');
 
 const getTabulation = async (req, res, next) => {
     try {
+        const { currentSession, semester } = req.body;
         const marks = await Mark.aggregate([{
-            $match: { currentSession: '2017-18', semester: 1 }
+            $match: { currentSession: currentSession, semester: semester }
         }, {
             $group: {
                 _id: '$roll',
