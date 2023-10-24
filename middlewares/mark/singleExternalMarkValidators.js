@@ -38,10 +38,14 @@ const addSingleExternalMarkValidators = [
                 throw createError(err.message);
             }
         }),
-    check('courseId')
+    check('courseName')
         .trim()
-        .isLength({ min: 24, max: 24 })
-        .withMessage('Course id is required'),
+        .isLength({ min: 4 })
+        .withMessage('Course name is required'),
+    check('courseCode')
+        .trim()
+        .isLength({ min: 3 })
+        .withMessage('Course code is required'),
     check('firstExaminer')
         .isDecimal()
         .withMessage('Mark must be number')
@@ -65,7 +69,11 @@ const addSingleExternalMarkValidators = [
             } catch (err) {
                 throw createError(err.message);
             }
-        })
+        }),
+    check('currentSession')
+        .trim()
+        .isLength({ min: 6 })
+        .withMessage('Current session is required')
 ];
 
 const addSingleExternalMarksValidationHandler = (req, res, next) => {

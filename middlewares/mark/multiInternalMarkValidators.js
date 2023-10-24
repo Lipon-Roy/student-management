@@ -38,10 +38,14 @@ const addMultiInternalMarkValidators = [
                 throw createError(err.message);
             }
         }),
-    check('marks.*.courseId')
+    check('marks.*.courseName')
         .trim()
-        .isLength({ min: 24, max: 24 })
-        .withMessage('Course id is required'),
+        .isLength({ min: 4 })
+        .withMessage('Course name is required'),
+    check('marks.*.courseCode')
+        .trim()
+        .isLength({ min: 3 })
+        .withMessage('Course code is required'),
     check('marks.*.midOne')
         .isDecimal()
         .withMessage('Mid one number must be number')
@@ -89,7 +93,11 @@ const addMultiInternalMarkValidators = [
             } catch (err) {
                 throw createError(err.message);
             }
-        })
+        }),
+    check('marks.*.currentSession')
+        .trim()
+        .isLength({ min: 6 })
+        .withMessage('Current session is required')
 ];
 
 const addMultiInternalMarksValidationHandler = (req, res, next) => {

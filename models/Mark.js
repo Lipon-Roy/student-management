@@ -17,9 +17,13 @@ const markSchema = mongoose.Schema(
             type: String,
             required: true
         },
-        courseId: {
-            type: mongoose.ObjectId,
+        courseName: {
+            type: String,
             required: true,
+        },
+        courseCode: {
+            type: String,
+            required: true
         },
         midOne: {
             type: Number,
@@ -66,6 +70,22 @@ const markSchema = mongoose.Schema(
             min: 0,
             max: 60,
             default: 0
+        },
+        minimum: {
+            type: Number,
+            default: 0
+        },
+        credit: {
+            type: Number,
+            required: true
+        },
+        total: {
+            type: Number,
+            default: 0
+        },
+        currentSession: {
+            type: String,
+            required: true
         }
     }
 );

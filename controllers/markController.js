@@ -34,7 +34,7 @@ const getSingleMark = async (req, res, next) => {
         res.status(200).json({
             result: mark
         });
-    } catch(err) {
+    } catch (err) {
         next(createError(err.message));
     }
 }
@@ -54,7 +54,7 @@ const getIsThirdExaminer = async (req, res, next) => {
         res.status(200).json({
             result: marks
         });
-    } catch(err) {
+    } catch (err) {
         next(createError(err.message));
     }
 }
@@ -74,7 +74,7 @@ const getImproveMark = async (req, res, next) => {
         res.status(200).json({
             result: mark
         });
-    } catch(err) {
+    } catch (err) {
         next(createError(err.message));
     }
 }
@@ -113,20 +113,23 @@ const addMarks = async (req, res, next) => {
 // add internal mark for single student
 const addSingleInternalMark = async (req, res, next) => {
     try {
-        const { department, semester, roll, courseId, midOne, midTwo, attendance, presentationOrAssignment } = req.body;
-        
+        const { department, semester, roll, courseName, courseCode, midOne, midTwo, attendance, presentationOrAssignment, currentSession } = req.body;
+
         // 64e384d6b12e86454d8d2ce4
         await Mark.updateOne({
             department: department,
             semester: semester,
             roll: roll,
-            courseId: courseId
+            courseName: courseName,
+            courseCode: courseCode,
+            currentSession
         }, {
             $set: {
                 midOne,
                 midTwo,
                 attendance,
-                presentationOrAssignment
+                presentationOrAssignment,
+                credit: 3
             }
         }, {
             upsert: true
@@ -153,7 +156,7 @@ const addMultipleInternalMark = async (req, res, next) => {
 
         const bulk = []
         marks.forEach(m => {
-            const { midOne, midTwo, attendance, presentationOrAssignment } = m;
+            const { midOne, midTwo, attendance, presentationOrAssignment, currentSession } = m;
 
             let updateDoc = {
                 'updateOne': {
@@ -161,13 +164,16 @@ const addMultipleInternalMark = async (req, res, next) => {
                         department: m.department,
                         semester: m.semester,
                         roll: m.roll,
-                        courseId: m.courseId
+                        courseName: m.courseName,
+                        courseCode: m.courseCode,
+                        currentSession
                     },
                     'update': {
                         midOne,
                         midTwo,
                         attendance,
-                        presentationOrAssignment
+                        presentationOrAssignment,
+                        credit: 3
                     },
                     'upsert': true
                 }
@@ -193,21 +199,41 @@ const addMultipleInternalMark = async (req, res, next) => {
 // add external mark for single student
 const addSingleExternalMark = async (req, res, next) => {
     try {
-        const { department, semester, roll, courseId, firstExaminer, secondExaminer } = req.body;
-        // 64e384d6b12e86454d8d2ce4
+        const { department, semester, roll, courseName, courseCode, firstExaminer, secondExaminer, currentSession } = req.body;
+        let total;
+
+        // get internal marks and set total
+        const result = await Mark.findOne({
+            department,
+            semester,
+            roll,
+            courseName,
+            courseCode,
+            currentSession
+        });
+
+        if (result && result._id) {
+            const { midOne, midTwo, attendance, presentationOrAssignment } = result;
+
+            total = midOne + midTwo + attendance + presentationOrAssignment;
+        } else throw (`Mark was not found for id ${roll}`);
+
+        total += (firstExaminer + secondExaminer) / 2;
+
         await Mark.updateOne({
-            department: department,
-            semester: semester,
-            roll: roll,
-            courseId: courseId
+            department,
+            semester,
+            roll,
+            courseName,
+            courseCode,
+            currentSession
         }, {
             $set: {
                 firstExaminer,
                 secondExaminer,
-                isThirdExaminer: Math.abs(firstExaminer - secondExaminer) >= 12
+                total: total.toFixed(2),
+                isThirdExaminer: Math.abs(firstExaminer - secondExaminer) > 12
             }
-        }, {
-            upsert: true
         });
 
         res.status(200).send({
@@ -228,11 +254,30 @@ const addSingleExternalMark = async (req, res, next) => {
 const addMultipleExternalMark = async (req, res, next) => {
     try {
         const { marks } = req.body;
-        // 64e384d6b12e86454d8d2ce4
+        // forEach er moddhe async/await babohar kora jaccilo na
 
         const bulk = []
-        marks.forEach(m => {
+        for (let m of marks) {
             const { firstExaminer, secondExaminer } = m;
+            let total = 0;
+
+            // get internal marks and set total
+            const result = await Mark.findOne({
+                department: m.department,
+                semester: m.semester,
+                roll: m.roll,
+                courseName: m.courseName,
+                courseCode: m.courseCode,
+                currentSession: m.currentSession
+            });
+
+            if (result && result._id) {
+                const { midOne, midTwo, attendance, presentationOrAssignment } = result;
+
+                total = midOne + midTwo + attendance + presentationOrAssignment;
+            } else throw (`Mark was not found for id ${m.roll}`);
+
+            total += (firstExaminer + secondExaminer) / 2;
 
             let updateDoc = {
                 'updateOne': {
@@ -240,18 +285,21 @@ const addMultipleExternalMark = async (req, res, next) => {
                         department: m.department,
                         semester: m.semester,
                         roll: m.roll,
-                        courseId: m.courseId
+                        courseName: m.courseName,
+                        courseCode: m.courseCode,
+                        currentSession: m.currentSession
                     },
                     'update': {
                         firstExaminer,
                         secondExaminer,
-                        isThirdExaminer: Math.abs(firstExaminer - secondExaminer) >= 12
-                    },
-                    upsert: true
+                        total: total.toFixed(2),
+                        isThirdExaminer: Math.abs(firstExaminer - secondExaminer) > 12
+                    }
                 }
             }
+
             bulk.push(updateDoc)
-        });
+        }
         await Mark.bulkWrite(bulk);
 
         res.status(200).json({
@@ -272,11 +320,45 @@ const addMultipleExternalMark = async (req, res, next) => {
 const addThirdExaminerMarks = async (req, res, next) => {
     try {
         const { marks } = req.body;
-        // 64e384d6b12e86454d8d2ce4
 
         const bulk = []
-        marks.forEach(m => {
+        for (let m of marks) {
             const { thirdExaminer } = m;
+            let total, minimum;
+
+            // get internal marks and set total and minimum
+            const result = await Mark.findOne({
+                department: m.department,
+                semester: m.semester,
+                roll: m.roll,
+                courseName: m.courseName,
+                courseCode: m.courseCode,
+                isThirdExaminer: true,
+                currentSession: m.currentSession
+            });
+            
+            if (result && result._id) {
+                const { midOne, midTwo, attendance, presentationOrAssignment, firstExaminer, secondExaminer } = result;
+
+                let diffOne = Math.abs(firstExaminer - secondExaminer);
+                let diffTwo = Math.abs(secondExaminer - thirdExaminer);
+                let diffThree = Math.abs(firstExaminer - thirdExaminer);
+
+                minimum = Math.min(diffOne, diffTwo, diffThree);
+
+                switch (minimum) {
+                    case Math.abs(firstExaminer - secondExaminer):
+                        total = (firstExaminer + secondExaminer)/2;
+                        break;
+                    case Math.abs(secondExaminer - thirdExaminer):
+                        total = (secondExaminer + thirdExaminer)/2;
+                        break;
+                    default:
+                        total = (firstExaminer + thirdExaminer)/2;
+                }
+
+                total = total + midOne + midTwo + attendance + presentationOrAssignment;
+            } else throw (createError(`Mark was not found for id ${m.roll}`));
 
             let updateDoc = {
                 'updateOne': {
@@ -284,16 +366,21 @@ const addThirdExaminerMarks = async (req, res, next) => {
                         department: m.department,
                         semester: m.semester,
                         roll: m.roll,
-                        courseId: m.courseId
+                        courseName: m.courseName,
+                        courseCode: m.courseCode,
+                        isThirdExaminer: true,
+                        currentSession: m.currentSession
                     },
                     'update': {
                         thirdExaminer,
-                        isThirdExaminer: false
+                        minimum,
+                        total: total.toFixed(2),
+                        // isThirdExaminer: false
                     }
                 }
             }
             bulk.push(updateDoc)
-        });
+        }
         await Mark.bulkWrite(bulk);
 
         res.status(200).json({
@@ -313,15 +400,18 @@ const addThirdExaminerMarks = async (req, res, next) => {
 // add lab mark for single student
 const addSingleLabMark = async (req, res) => {
     try {
-        const { department, semester, roll, courseId, labTotal } = req.body;
+        const { department, semester, roll, courseName, courseCode, labTotal, currentSession } = req.body;
         await LabMark.updateOne({
             department,
             semester,
             roll,
-            courseId
+            courseName,
+            courseCode,
+            currentSession
         }, {
             $set: {
-                labTotal
+                labTotal,
+                credit: 1.5
             }
         }, {
             upsert: true
@@ -330,7 +420,7 @@ const addSingleLabMark = async (req, res) => {
         res.status(201).json({
             message: 'Lab mark successfully added'
         });
-    } catch(err) {
+    } catch (err) {
         res.status(500).json({
             errors: {
                 common: {
@@ -356,9 +446,11 @@ const addMultipleLabMark = async (req, res) => {
                         department: m.department,
                         semester: m.semester,
                         roll: m.roll,
-                        courseId: m.courseId
+                        courseName: m.courseName,
+                        courseCode: m.courseCode,
+                        currentSession: m.currentSession
                     },
-                    'update': { labTotal: m.labTotal },
+                    'update': { labTotal: m.labTotal, credit: 1.5 },
                     'upsert': true
                 }
             }

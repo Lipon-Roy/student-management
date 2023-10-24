@@ -18,9 +18,21 @@ const labMarkSchema = mongoose.Schema(
             type: String,
             required: true
         },
-        courseId: {
-            type: mongoose.ObjectId,
+        courseName: {
+            type: String,
             required: true,
+        },
+        courseCode: {
+            type: String,
+            required: true
+        },
+        currentSession: {
+            type: String,
+            required: true
+        },
+        credit: {
+            type: Number,
+            required: true
         },
         labTotal: {
             type: Number,

@@ -29,15 +29,13 @@ const getTabulation = async (req, res, next) => {
                         input: '$courses',
                         as: 'course',
                         in: {
-                            _id: '$$course._id',
-                            courseId: '$$course.courseId',
-                            department: '$$course.department',
                             roll: '$$course.roll',
-                            credit: 3,
-                            forty: {
+                            courseCode: '$$course.courseCode',
+                            credit: '$$course.credit',
+                            "theory Continuous (40%)": {
                                 $sum: ['$$course.midOne', '$$course.midTwo', '$$course.presentationOrAssignment', '$$course.attendance']
                             },
-                            sixty: {
+                            "theory final exam (60%)": {
                                 $switch: {
                                     branches: [
                                         { case: { $lte: [{ $abs: { $subtract: ['$$course.firstExaminer', '$$course.secondExaminer'] } }, 12] }, then: { $avg: ['$$course.firstExaminer', '$$course.secondExaminer'] } },
@@ -88,10 +86,10 @@ const getTabulation = async (req, res, next) => {
                         input: '$labs',
                         as: 'lab',
                         in: {
-                            _id: '$$lab._id',
-                            courseId: '$$lab.courseId',
-                            department: '$$lab.department',
                             roll: '$$lab.roll',
+                            courseCode: '$$lab.courseCode',
+                            "Lab Continuous (20%)": 15,
+                            "Lab final exam (80%)": 55,
                             total: '$$lab.labTotal',
                             credit: '$$lab.credit',
                             LG: {
@@ -141,13 +139,14 @@ const getTabulation = async (req, res, next) => {
                 _id: '$marks.roll',
                 totalPoint: { $sum: { $multiply: ['$marks.credit', '$marks.GP'] } },
                 totalCredit: { $sum: '$marks.credit' },
-                courses: {
+                marks: {
                     $push: '$marks'
                 }
             }
         }, {
             $addFields: {
-                GPA: { $round: [{ $divide: ['$totalPoint', '$totalCredit'] }, 2] }
+                GPA: { $round: [{ $divide: ['$totalPoint', '$totalCredit'] }, 2] },
+                CGPA: 3.50
             }
         }, {
             $project: { totalPoint: 0, totalCredit: 0 }

@@ -38,10 +38,14 @@ const addSingleInternalMarkValidators = [
                 throw createError(err.message);
             }
         }),
-    check('courseId')
+    check('courseName')
         .trim()
-        .isLength({ min: 24, max: 24 })
-        .withMessage('Course id is required'),
+        .isLength({ min: 4 })
+        .withMessage('Course  name is required'),
+    check('courseCode')
+        .trim()
+        .isLength({ min: 4 })
+        .withMessage('Course code is required'),
     check('midOne')
         .isDecimal()
         .withMessage('Mid one number must be number')
@@ -90,6 +94,10 @@ const addSingleInternalMarkValidators = [
                 throw createError(err.message);
             }
         }),
+    check('currentSession')
+        .trim()
+        .isLength({ min: 6 })
+        .withMessage('Current session is required')
 ];
 
 const addSingleInternalMarksValidationHandler = (req, res, next) => {

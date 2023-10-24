@@ -38,22 +38,30 @@ const addThirdExaminerMarkValidator = [
                 throw createError(err.message);
             }
         }),
-    check('marks.*.courseId')
+    check('marks.*.courseName')
         .trim()
-        .isLength({ min: 24, max: 24 })
-        .withMessage('Course id is required'),
+        .isLength({ min: 3 })
+        .withMessage('Course name is required'),
+    check('marks.*.courseCode')
+        .trim()
+        .isLength({ min: 3 })
+        .withMessage('Course code is required'),
     check('marks.*.thirdExaminer')
         .isDecimal()
         .withMessage('Mark must be number')
         .custom(async value => {
             try {
                 if (value < 0 || value > 60) {
-                    throw createError('Second examiner mark must be from 0 to 60');
+                    throw createError('Third examiner mark must be from 0 to 60');
                 }
             } catch (err) {
                 throw createError(err.message);
             }
-        })
+        }),
+    check('marks.*.currentSession')
+        .trim()
+        .isLength({ min: 6 })
+        .withMessage('Current session is required')
 ];
 
 const addThirdExaminerMarkValidationHandler = (req, res, next) => {
