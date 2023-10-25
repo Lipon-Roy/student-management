@@ -2,10 +2,12 @@
 const express = require('express');
 
 // internal imports
-const { getTabulation } = require('../controllers/resultController');
+const { getTabulation, getCourseTabulation } = require('../controllers/resultController');
 
 const router = express.Router();
 
-router.get('/', getTabulation);
+router.get('/:dept/:session/:semester', getTabulation);
+
+router.get('/:dept/:session/:semester/:course/:code', getCourseTabulation);
 
 module.exports = router;
