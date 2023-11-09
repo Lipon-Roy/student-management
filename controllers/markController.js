@@ -21,13 +21,14 @@ const getAllMarks = async (req, res, next) => {
 
 // get internal mark for single student
 const getSingleMark = async (req, res, next) => {
-    const { dept, semester, course, roll } = req.params;
-
+    const { dept, semester, courseName, courseCode, roll } = req.params;
+    
     try {
         const mark = await Mark.findOne({
             department: dept,
             semester,
-            courseId: course,
+            courseName,
+            courseCode,
             roll
         });
 
@@ -41,13 +42,14 @@ const getSingleMark = async (req, res, next) => {
 
 // get mark which are isThirdExaminer true
 const getIsThirdExaminer = async (req, res, next) => {
-    const { dept, semester, course } = req.params;
+    const { dept, semester, courseName, courseCode } = req.params;
 
     try {
         const marks = await Mark.find({
             department: dept,
             semester,
-            courseId: course,
+            courseName,
+            courseCode,
             isThirdExaminer: true
         });
 
@@ -61,13 +63,14 @@ const getIsThirdExaminer = async (req, res, next) => {
 
 // get improve third examiner mark
 const getImproveMark = async (req, res, next) => {
-    const { dept, semester, course, roll } = req.params;
+    const { dept, semester, courseName, courseCode, roll } = req.params;
 
     try {
         const mark = await ImproveMark.findOne({
             department: dept,
             semester,
-            courseId: course,
+            courseName,
+            courseCode,
             roll
         });
 

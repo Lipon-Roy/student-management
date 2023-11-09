@@ -28,13 +28,13 @@ const router = express.Router();
 router.get('/', getAllMarks);
 
 // get single mark
-router.get('/:dept/:semester/:course/:roll', getSingleMark);
+router.get('/:dept/:semester/:courseName/:courseCode/:roll', getSingleMark);
 
 // get mark which are isThirdExaminer true
-router.get('/:dept/:semester/:course', getIsThirdExaminer);
+router.get('/:dept/:semester/:courseName/:courseCode', getIsThirdExaminer);
 
 // get improve third examiner mark
-router.get('/improve/:dept/:semester/:course/:roll', getImproveMark);
+router.get('/improve/:dept/:semester/:courseName/:courseCode/:roll', getImproveMark);
 
 // get all lab marks
 router.get('/lab', getLabMarks);
