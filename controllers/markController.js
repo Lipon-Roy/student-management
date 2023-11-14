@@ -393,7 +393,7 @@ const addThirdExaminerMarks = async (req, res, next) => {
                         thirdExaminer,
                         minimum,
                         total: total.toFixed(2),
-                        // isThirdExaminer: false
+                        isThirdExaminer: false
                     }
                 }
             }
