@@ -207,7 +207,7 @@ const addSingleExternalMark = async (req, res, next) => {
 
         semester = Number(semester);
         firstExaminer = Number(firstExaminer);
-        secondExaminer = secondExaminer;
+        secondExaminer = Number(secondExaminer);
 
         // get internal marks and set total
         const result = await Mark.findOne({
