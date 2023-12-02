@@ -539,13 +539,14 @@ const getCourseTabulation = async (req, res, next) => {
 // get improve marks with previous
 const getImproveMarkTabulation = async (req, res, next) => {
   try {
+    const {dept, session, course, code} = req.body;
     const improveResult = await ImproveMark.aggregate([
       {
         $match: {
-          currentSession: "2017-18",
-          department: "EEE",
-          courseName: "Computer Programming",
-          courseCode: "CSE-101",
+          currentSession: session,
+          department: dept,
+          courseName: course,
+          courseCode: code
         },
       },
       {
@@ -556,10 +557,10 @@ const getImproveMarkTabulation = async (req, res, next) => {
           pipeline: [
             {
               $match: {
-                currentSession: "2017-18",
-                department: "EEE",
-                courseName: "Computer Programming",
-                courseCode: "CSE-101",
+                currentSession: session,
+                department: dept,
+                courseName: course,
+                courseCode: code
               },
             },
           ],
