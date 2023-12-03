@@ -539,7 +539,8 @@ const getCourseTabulation = async (req, res, next) => {
 // get improve marks with previous
 const getImproveMarkTabulation = async (req, res, next) => {
   try {
-    const {dept, session, course, code} = req.body;
+    const {dept, session, course, code} = req.params;
+
     const improveResult = await ImproveMark.aggregate([
       {
         $match: {
@@ -751,7 +752,7 @@ const getImproveMarkTabulation = async (req, res, next) => {
             },
             totalMark: "$prevMark.total",
           },
-          improvedMarks: {
+          improvedMark: {
             firstExaminer: "$firstExaminer",
             secondExaminer: "$secondExaminer",
             thirdExaminer: "$thirdExaminer",
@@ -880,124 +881,6 @@ const getImproveMarkTabulation = async (req, res, next) => {
               },
             },
           },
-          improvedGPA: {
-            $switch: {
-              branches: [
-                {
-                  case: {
-                    $gt: [
-                      { $sum: ["$internalMark", "$improveFinal"] },
-                      "$prevMark.total",
-                    ],
-                  },
-                  then: {
-                    $switch: {
-                      branches: [
-                        {
-                          case: {
-                            $gte: [
-                              { $sum: ["$internalMark", "$improveFinal"] },
-                              80,
-                            ],
-                          },
-                          then: "A+",
-                        },
-                        {
-                          case: {
-                            $gte: [
-                              { $sum: ["$internalMark", "$improveFinal"] },
-                              75,
-                            ],
-                          },
-                          then: "A",
-                        },
-                        {
-                          case: {
-                            $gte: [
-                              { $sum: ["$internalMark", "$improveFinal"] },
-                              70,
-                            ],
-                          },
-                          then: "A-",
-                        },
-                        {
-                          case: {
-                            $gte: [
-                              { $sum: ["$internalMark", "$improveFinal"] },
-                              65,
-                            ],
-                          },
-                          then: "B+",
-                        },
-                        {
-                          case: {
-                            $gte: [
-                              { $sum: ["$internalMark", "$improveFinal"] },
-                              60,
-                            ],
-                          },
-                          then: "B",
-                        },
-                        {
-                          case: {
-                            $gte: [
-                              { $sum: ["$internalMark", "$improveFinal"] },
-                              55,
-                            ],
-                          },
-                          then: "B-",
-                        },
-                        {
-                          case: {
-                            $gte: [
-                              { $sum: ["$internalMark", "$improveFinal"] },
-                              50,
-                            ],
-                          },
-                          then: "C+",
-                        },
-                        {
-                          case: {
-                            $gte: [
-                              { $sum: ["$internalMark", "$improveFinal"] },
-                              45,
-                            ],
-                          },
-                          then: "C",
-                        },
-                        {
-                          case: {
-                            $gte: [
-                              { $sum: ["$internalMark", "$improveFinal"] },
-                              40,
-                            ],
-                          },
-                          then: "C",
-                        },
-                      ],
-                      default: "F",
-                    },
-                  },
-                },
-              ],
-              default: {
-                $switch: {
-                  branches: [
-                    { case: { $gte: ["$prevMark.total", 80] }, then: "A+" },
-                    { case: { $gte: ["$prevMark.total", 75] }, then: "A" },
-                    { case: { $gte: ["$prevMark.total", 70] }, then: "A-" },
-                    { case: { $gte: ["$prevMark.total", 65] }, then: "B+" },
-                    { case: { $gte: ["$prevMark.total", 60] }, then: "B" },
-                    { case: { $gte: ["$prevMark.total", 55] }, then: "B-" },
-                    { case: { $gte: ["$prevMark.total", 50] }, then: "C+" },
-                    { case: { $gte: ["$prevMark.total", 45] }, then: "C" },
-                    { case: { $gte: ["$prevMark.total", 40] }, then: "D" },
-                  ],
-                  default: "F",
-                },
-              },
-            },
-          },
           remark: {
             $switch: {
               branches: [
@@ -1015,6 +898,21 @@ const getImproveMarkTabulation = async (req, res, next) => {
             },
           },
         },
+      },
+      {
+        $addFields: {
+          improvedGPA: {
+            $switch: {
+              branches: [
+                {
+                  case: {$gt: [{$sum: ['$internalMark', '$improveFinal']}, '$prevMark.total']},
+                  then: '$improvedMark.GP'
+                }
+              ],
+              default: '$previousMark.GP'
+            }
+          }
+        }
       },
       {
         $sort: { roll: 1 },
