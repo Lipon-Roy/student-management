@@ -539,7 +539,10 @@ const getCourseTabulation = async (req, res, next) => {
 // get improve marks with previous
 const getImproveMarkTabulation = async (req, res, next) => {
   try {
-    const {dept, session, course, code} = req.params;
+    const { dept, session, course, code } = req.params;
+
+    // check first the course is lab or theory
+    // if the result for lab, the aggregation another from this
 
     const improveResult = await ImproveMark.aggregate([
       {
@@ -547,7 +550,7 @@ const getImproveMarkTabulation = async (req, res, next) => {
           currentSession: session,
           department: dept,
           courseName: course,
-          courseCode: code
+          courseCode: code,
         },
       },
       {
@@ -561,7 +564,7 @@ const getImproveMarkTabulation = async (req, res, next) => {
                 currentSession: session,
                 department: dept,
                 courseName: course,
-                courseCode: code
+                courseCode: code,
               },
             },
           ],
@@ -905,23 +908,291 @@ const getImproveMarkTabulation = async (req, res, next) => {
             $switch: {
               branches: [
                 {
-                  case: {$gt: [{$sum: ['$internalMark', '$improveFinal']}, '$prevMark.total']},
-                  then: '$improvedMark.GP'
-                }
+                  case: {
+                    $gt: [
+                      { $sum: ["$internalMark", "$improveFinal"] },
+                      "$prevMark.total",
+                    ],
+                  },
+                  then: "$improvedMark.GP",
+                },
               ],
-              default: '$previousMark.GP'
-            }
-          }
-        }
+              default: "$previousMark.GP",
+            },
+          },
+        },
       },
       {
         $sort: { roll: 1 },
-      }
+      },
     ]);
 
     res.status(200).json({
-      result: improveResult
+      result: improveResult,
     });
+  } catch (err) {
+    next(createError(err.message));
+  }
+};
+
+const getSemesterTranscript = async (req, res, next) => {
+  try {
+    const { dept, session, roll } = req.params;
+
+    const semesterTranscript = await Mark.aggregate([
+      {
+        $match: {
+          department: dept,
+          currentSession: session,
+          roll: roll,
+        },
+      },
+      {
+        $group: {
+          _id: "$roll",
+          courses: { $push: "$$ROOT" },
+        },
+      },
+      {
+        $project: { _id: 0 },
+      },
+      {
+        $lookup: {
+          from: "labmarks",
+          localField: "courses.roll",
+          foreignField: "roll",
+          pipeline: [
+            {
+              $match: {
+                department: dept,
+                currentSession: session,
+                roll,
+              },
+            },
+          ],
+          as: "labs",
+        },
+      },
+      {
+        $project: {
+          courses: {
+            $map: {
+              input: "$courses",
+              as: "course",
+              in: {
+                courseCode: "$$course.courseCode",
+                courseTitle: "$$course.courseName",
+                courseCredit: "$$course.credit",
+                LG: {
+                  $switch: {
+                    branches: [
+                      {
+                        case: { $gte: ["$$course.total", 80] },
+                        then: "A+",
+                      },
+                      { case: { $gte: ["$$course.total", 75] }, then: "A" },
+                      {
+                        case: { $gte: ["$$course.total", 70] },
+                        then: "A-",
+                      },
+                      {
+                        case: { $gte: ["$$course.total", 65] },
+                        then: "B+",
+                      },
+                      { case: { $gte: ["$$course.total", 60] }, then: "B" },
+                      {
+                        case: { $gte: ["$$course.total", 55] },
+                        then: "B-",
+                      },
+                      {
+                        case: { $gte: ["$$course.total", 50] },
+                        then: "C+",
+                      },
+                      { case: { $gte: ["$$course.total", 45] }, then: "C" },
+                      { case: { $gte: ["$$course.total", 40] }, then: "D" },
+                    ],
+                    default: "F",
+                  },
+                },
+                CGP: {
+                  $switch: {
+                    branches: [
+                      { case: { $gte: ["$$course.total", 80] }, then: 4.0 },
+                      {
+                        case: { $gte: ["$$course.total", 75] },
+                        then: 3.75,
+                      },
+                      { case: { $gte: ["$$course.total", 70] }, then: 3.5 },
+                      {
+                        case: { $gte: ["$$course.total", 65] },
+                        then: 3.25,
+                      },
+                      { case: { $gte: ["$$course.total", 60] }, then: 3.0 },
+                      {
+                        case: { $gte: ["$$course.total", 55] },
+                        then: 2.75,
+                      },
+                      { case: { $gte: ["$$course.total", 50] }, then: 2.5 },
+                      {
+                        case: { $gte: ["$$course.total", 45] },
+                        then: 2.25,
+                      },
+                      { case: { $gte: ["$$course.total", 40] }, then: 2.0 },
+                    ],
+                    default: 0,
+                  },
+                },
+              },
+            },
+          },
+          labs: {
+            $map: {
+              input: "$labs",
+              as: "lab",
+              in: {
+                courseCode: "$$lab.courseCode",
+                courseTitle: "$$lab.courseName",
+                courseCredit: "$$lab.credit",
+                LG: {
+                  $switch: {
+                    branches: [
+                      {
+                        case: { $gte: ["$$lab.labTotal", 80] },
+                        then: "A+",
+                      },
+                      { case: { $gte: ["$$lab.labTotal", 75] }, then: "A" },
+                      {
+                        case: { $gte: ["$$lab.labTotal", 70] },
+                        then: "A-",
+                      },
+                      {
+                        case: { $gte: ["$$lab.labTotal", 65] },
+                        then: "B+",
+                      },
+                      { case: { $gte: ["$$lab.labTotal", 60] }, then: "B" },
+                      {
+                        case: { $gte: ["$$lab.labTotal", 55] },
+                        then: "B-",
+                      },
+                      {
+                        case: { $gte: ["$$lab.labTotal", 50] },
+                        then: "C+",
+                      },
+                      { case: { $gte: ["$$lab.labTotal", 45] }, then: "C" },
+                      { case: { $gte: ["$$lab.labTotal", 40] }, then: "D" },
+                    ],
+                    default: "F",
+                  },
+                },
+                CGP: {
+                  $switch: {
+                    branches: [
+                      { case: { $gte: ["$$lab.labTotal", 80] }, then: 4.0 },
+                      {
+                        case: { $gte: ["$$lab.labTotal", 75] },
+                        then: 3.75,
+                      },
+                      { case: { $gte: ["$$lab.labTotal", 70] }, then: 3.5 },
+                      {
+                        case: { $gte: ["$$lab.labTotal", 65] },
+                        then: 3.25,
+                      },
+                      { case: { $gte: ["$$lab.labTotal", 60] }, then: 3.0 },
+                      {
+                        case: { $gte: ["$$lab.labTotal", 55] },
+                        then: 2.75,
+                      },
+                      { case: { $gte: ["$$lab.labTotal", 50] }, then: 2.5 },
+                      {
+                        case: { $gte: ["$$lab.labTotal", 45] },
+                        then: 2.25,
+                      },
+                      { case: { $gte: ["$$lab.labTotal", 40] }, then: 2.0 },
+                    ],
+                    default: 0,
+                  },
+                },
+              },
+            },
+          },
+        },
+      },
+      {
+        $project: {
+          courseData: {
+            $concatArrays: ["$courses", "$labs"],
+          },
+        },
+      },
+      {
+        $project: {
+          courseData: 1,
+          totalPoint: {
+            $reduce: {
+              input: "$courseData",
+              initialValue: 0,
+              in: {
+                $sum: [
+                  "$$value",
+                  { $multiply: ["$$this.courseCredit", "$$this.CGP"] },
+                ],
+              },
+            },
+          },
+          totalCredit: {
+            $reduce: {
+              input: "$courseData",
+              initialValue: 0,
+              in: { $sum: ["$$value", "$$this.courseCredit"] },
+            },
+          },
+        },
+      },
+      {
+        $project: {
+          courseData: 1,
+          GPA: {
+            $round: [{ $divide: ["$totalPoint", "$totalCredit"] }, 2],
+          },
+        },
+      },
+      {
+        $project: {
+          courseData: 1,
+          GPA: 1,
+          LG: {
+            $switch: {
+              branches: [
+                { case: { $gte: ["$GPA", 4] }, then: "A+" },
+                {
+                  case: { $gte: ["$GPA", 3.75] },
+                  then: "A",
+                },
+                { case: { $gte: ["$GPA", 3.5] }, then: "A-" },
+                {
+                  case: { $gte: ["$GPA", 3.25] },
+                  then: "B+",
+                },
+                { case: { $gte: ["$GPA", 3] }, then: "B" },
+                {
+                  case: { $gte: ["$GPA", 2.75] },
+                  then: "B-",
+                },
+                { case: { $gte: ["$GPA", 2.5] }, then: "C+" },
+                {
+                  case: { $gte: ["$GPA", 2.25] },
+                  then: "C",
+                },
+                { case: { $gte: ["$GPA", 2] }, then: "D" },
+              ],
+              default: "F",
+            },
+          },
+        },
+      },
+    ]);
+
+    res.status(200).json({ semesterTranscript: semesterTranscript[0] });
   } catch (err) {
     next(createError(err.message));
   }
@@ -931,4 +1202,5 @@ module.exports = {
   getTabulation,
   getCourseTabulation,
   getImproveMarkTabulation,
+  getSemesterTranscript,
 };
