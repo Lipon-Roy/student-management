@@ -53,6 +53,6 @@ const labMarkSchema = mongoose.Schema({
   },
 });
 
-const LabMark = mongoose.model("LabMark", labMarkSchema);
+const LabImprove = mongoose.model("LabImprove", labMarkSchema);
 
-module.exports = LabMark;
+module.exports = LabImprove;

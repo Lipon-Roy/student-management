@@ -942,6 +942,7 @@ const getSemesterTranscript = async (req, res, next) => {
     const semesterTranscript = await Mark.aggregate([
       {
         $match: {
+          // semester o lagbe match korar jonno
           department: dept,
           currentSession: session,
           roll: roll,
@@ -1198,9 +1199,4332 @@ const getSemesterTranscript = async (req, res, next) => {
   }
 };
 
+const getTabulationSheetPerYear = async (req, res, next) => {
+  try {
+    const { year, dept, session, roll } = req.params;
+
+    const firstSemester = Number(year) * 2 - 1;
+    const secondSemester = Number(year) * 2;
+    const prevMaxSemester = secondSemester === 2 ? 2 : secondSemester - 2;
+
+    const courseMarks = await Mark.aggregate([
+      {
+        $match: {
+          department: dept,
+          currentSession: session,
+          semester: { $in: [firstSemester, secondSemester] },
+          roll,
+        },
+      },
+      {
+        $group: {
+          _id: "$semester",
+          courseMarks: { $push: "$$ROOT" },
+        },
+      },
+      {
+        $lookup: {
+          from: "labmarks",
+          localField: "_id",
+          foreignField: "semester",
+          pipeline: [
+            {
+              $match: {
+                department: dept,
+                currentSession: session,
+                roll,
+              },
+            },
+          ],
+          as: "labMarks",
+        },
+      },
+      {
+        $lookup: {
+          from: "improves",
+          localField: "_id",
+          foreignField: "semester",
+          pipeline: [
+            {
+              $match: {
+                department: dept,
+                currentSession: session,
+                roll,
+              },
+            },
+          ],
+          as: "theoryImproves",
+        },
+      },
+      {
+        $lookup: {
+          from: "labimproves",
+          localField: "_id",
+          foreignField: "semester",
+          pipeline: [
+            {
+              $match: {
+                department: dept,
+                currentSession: session,
+                roll,
+              },
+            },
+          ],
+          as: "labImproves",
+        },
+      },
+      {
+        $project: {
+          courseMarks: {
+            $map: {
+              input: "$courseMarks",
+              as: "mark",
+              in: {
+                courseCode: "$$mark.courseCode",
+                courseCredit: "$$mark.credit",
+                internalMark: "$$mark.totalInternal",
+                finalMark: "$$mark.totalExternal",
+                totalMark: "$$mark.total",
+                LG: {
+                  $switch: {
+                    branches: [
+                      {
+                        case: { $gte: ["$$mark.total", 80] },
+                        then: "A+",
+                      },
+                      {
+                        case: { $gte: ["$$mark.total", 75] },
+                        then: "A",
+                      },
+                      {
+                        case: { $gte: ["$$mark.total", 70] },
+                        then: "A-",
+                      },
+                      {
+                        case: { $gte: ["$$mark.total", 65] },
+                        then: "B+",
+                      },
+                      {
+                        case: { $gte: ["$$mark.total", 60] },
+                        then: "B",
+                      },
+                      {
+                        case: { $gte: ["$$mark.total", 55] },
+                        then: "B-",
+                      },
+                      {
+                        case: { $gte: ["$$mark.total", 50] },
+                        then: "C+",
+                      },
+                      {
+                        case: { $gte: ["$$mark.total", 45] },
+                        then: "C",
+                      },
+                      {
+                        case: { $gte: ["$$mark.total", 40] },
+                        then: "D",
+                      },
+                    ],
+                    default: "F",
+                  },
+                },
+                GP: {
+                  $switch: {
+                    branches: [
+                      {
+                        case: { $gte: ["$$mark.total", 80] },
+                        then: 4.0,
+                      },
+                      {
+                        case: { $gte: ["$$mark.total", 75] },
+                        then: 3.75,
+                      },
+                      {
+                        case: { $gte: ["$$mark.total", 70] },
+                        then: 3.5,
+                      },
+                      {
+                        case: { $gte: ["$$mark.total", 65] },
+                        then: 3.25,
+                      },
+                      {
+                        case: { $gte: ["$$mark.total", 60] },
+                        then: 3.0,
+                      },
+                      {
+                        case: { $gte: ["$$mark.total", 55] },
+                        then: 2.75,
+                      },
+                      {
+                        case: { $gte: ["$$mark.total", 50] },
+                        then: 2.5,
+                      },
+                      {
+                        case: { $gte: ["$$mark.total", 45] },
+                        then: 2.25,
+                      },
+                      {
+                        case: { $gte: ["$$mark.total", 40] },
+                        then: 2.0,
+                      },
+                    ],
+                    default: 0,
+                  },
+                },
+              },
+            },
+          },
+          labMarks: {
+            $map: {
+              input: "$labMarks",
+              as: "lab",
+              in: {
+                courseCode: "$$lab.courseCode",
+                courseCredit: "$$lab.credit",
+                internalMark: "$$lab.tweentyPercent",
+                finalMark: "$$lab.eightyPercent",
+                totalMark: "$$lab.labTotal",
+                LG: {
+                  $switch: {
+                    branches: [
+                      {
+                        case: { $gte: ["$$lab.labTotal", 80] },
+                        then: "A+",
+                      },
+                      {
+                        case: { $gte: ["$$lab.labTotal", 75] },
+                        then: "A",
+                      },
+                      {
+                        case: { $gte: ["$$lab.labTotal", 70] },
+                        then: "A-",
+                      },
+                      {
+                        case: { $gte: ["$$lab.labTotal", 65] },
+                        then: "B+",
+                      },
+                      {
+                        case: { $gte: ["$$lab.labTotal", 60] },
+                        then: "B",
+                      },
+                      {
+                        case: { $gte: ["$$lab.labTotal", 55] },
+                        then: "B-",
+                      },
+                      {
+                        case: { $gte: ["$$lab.labTotal", 50] },
+                        then: "C+",
+                      },
+                      {
+                        case: { $gte: ["$$lab.labTotal", 45] },
+                        then: "C",
+                      },
+                      {
+                        case: { $gte: ["$$lab.labTotal", 40] },
+                        then: "D",
+                      },
+                    ],
+                    default: "F",
+                  },
+                },
+                GP: {
+                  $switch: {
+                    branches: [
+                      {
+                        case: { $gte: ["$$lab.labTotal", 80] },
+                        then: 4.0,
+                      },
+                      {
+                        case: { $gte: ["$$lab.labTotal", 75] },
+                        then: 3.75,
+                      },
+                      {
+                        case: { $gte: ["$$lab.labTotal", 70] },
+                        then: 3.5,
+                      },
+                      {
+                        case: { $gte: ["$$lab.labTotal", 65] },
+                        then: 3.25,
+                      },
+                      {
+                        case: { $gte: ["$$lab.labTotal", 60] },
+                        then: 3.0,
+                      },
+                      {
+                        case: { $gte: ["$$lab.labTotal", 55] },
+                        then: 2.75,
+                      },
+                      {
+                        case: { $gte: ["$$lab.labTotal", 50] },
+                        then: 2.5,
+                      },
+                      {
+                        case: { $gte: ["$$lab.labTotal", 45] },
+                        then: 2.25,
+                      },
+                      {
+                        case: { $gte: ["$$lab.labTotal", 40] },
+                        then: 2.0,
+                      },
+                    ],
+                    default: 0,
+                  },
+                },
+              },
+            },
+          },
+          theoryImproves: {
+            $map: {
+              input: "$theoryImproves",
+              as: "improve",
+              in: {
+                courseCode: "$$improve.courseCode",
+                courseCredit: "$$improve.credit",
+                internalMark: "$$improve.totalInternal",
+                finalMark: "$$improve.totalExternal",
+                totalMark: "$$improve.total",
+                LG: {
+                  $switch: {
+                    branches: [
+                      {
+                        case: { $gte: ["$$improve.total", 80] },
+                        then: "A+",
+                      },
+                      {
+                        case: { $gte: ["$$improve.total", 75] },
+                        then: "A",
+                      },
+                      {
+                        case: { $gte: ["$$improve.total", 70] },
+                        then: "A-",
+                      },
+                      {
+                        case: { $gte: ["$$improve.total", 65] },
+                        then: "B+",
+                      },
+                      {
+                        case: { $gte: ["$$improve.total", 60] },
+                        then: "B",
+                      },
+                      {
+                        case: { $gte: ["$$improve.total", 55] },
+                        then: "B-",
+                      },
+                      {
+                        case: { $gte: ["$$improve.total", 50] },
+                        then: "C+",
+                      },
+                      {
+                        case: { $gte: ["$$improve.total", 45] },
+                        then: "C",
+                      },
+                      {
+                        case: { $gte: ["$$improve.total", 40] },
+                        then: "D",
+                      },
+                    ],
+                    default: "F",
+                  },
+                },
+                GP: {
+                  $switch: {
+                    branches: [
+                      {
+                        case: { $gte: ["$$improve.total", 80] },
+                        then: 4.0,
+                      },
+                      {
+                        case: { $gte: ["$$improve.total", 75] },
+                        then: 3.75,
+                      },
+                      {
+                        case: { $gte: ["$$improve.total", 70] },
+                        then: 3.5,
+                      },
+                      {
+                        case: { $gte: ["$$improve.total", 65] },
+                        then: 3.25,
+                      },
+                      {
+                        case: { $gte: ["$$improve.total", 60] },
+                        then: 3.0,
+                      },
+                      {
+                        case: { $gte: ["$$improve.total", 55] },
+                        then: 2.75,
+                      },
+                      {
+                        case: { $gte: ["$$improve.total", 50] },
+                        then: 2.5,
+                      },
+                      {
+                        case: { $gte: ["$$improve.total", 45] },
+                        then: 2.25,
+                      },
+                      {
+                        case: { $gte: ["$$improve.total", 40] },
+                        then: 2.0,
+                      },
+                    ],
+                    default: 0,
+                  },
+                },
+              },
+            },
+          },
+          labImproves: {
+            $map: {
+              input: "$labImproves",
+              as: "improve",
+              in: {
+                courseCode: "$$improve.courseCode",
+                courseCredit: "$$improve.credit",
+                internalMark: "$$improve.tweentyPercent",
+                finalMark: "$$improve.eightyPercent",
+                totalMark: "$$improve.labTotal",
+                LG: {
+                  $switch: {
+                    branches: [
+                      {
+                        case: { $gte: ["$$improve.labTotal", 80] },
+                        then: "A+",
+                      },
+                      {
+                        case: { $gte: ["$$improve.labTotal", 75] },
+                        then: "A",
+                      },
+                      {
+                        case: { $gte: ["$$improve.labTotal", 70] },
+                        then: "A-",
+                      },
+                      {
+                        case: { $gte: ["$$improve.labTotal", 65] },
+                        then: "B+",
+                      },
+                      {
+                        case: { $gte: ["$$improve.labTotal", 60] },
+                        then: "B",
+                      },
+                      {
+                        case: { $gte: ["$$improve.labTotal", 55] },
+                        then: "B-",
+                      },
+                      {
+                        case: { $gte: ["$$improve.labTotal", 50] },
+                        then: "C+",
+                      },
+                      {
+                        case: { $gte: ["$$improve.labTotal", 45] },
+                        then: "C",
+                      },
+                      {
+                        case: { $gte: ["$$improve.labTotal", 40] },
+                        then: "D",
+                      },
+                    ],
+                    default: "F",
+                  },
+                },
+                GP: {
+                  $switch: {
+                    branches: [
+                      {
+                        case: { $gte: ["$$improve.labTotal", 80] },
+                        then: 4.0,
+                      },
+                      {
+                        case: { $gte: ["$$improve.labTotal", 75] },
+                        then: 3.75,
+                      },
+                      {
+                        case: { $gte: ["$$improve.labTotal", 70] },
+                        then: 3.5,
+                      },
+                      {
+                        case: { $gte: ["$$improve.labTotal", 65] },
+                        then: 3.25,
+                      },
+                      {
+                        case: { $gte: ["$$improve.labTotal", 60] },
+                        then: 3.0,
+                      },
+                      {
+                        case: { $gte: ["$$improve.labTotal", 55] },
+                        then: 2.75,
+                      },
+                      {
+                        case: { $gte: ["$$improve.labTotal", 50] },
+                        then: 2.5,
+                      },
+                      {
+                        case: { $gte: ["$$improve.labTotal", 45] },
+                        then: 2.25,
+                      },
+                      {
+                        case: { $gte: ["$$improve.labTotal", 40] },
+                        then: 2.0,
+                      },
+                    ],
+                    default: 0,
+                  },
+                },
+              },
+            },
+          },
+        },
+      },
+      {
+        $project: {
+          regularMarks: { $concatArrays: ["$courseMarks", "$labMarks"] },
+          improveMarks: {
+            $concatArrays: ["$theoryImproves", "$labImproves"],
+          },
+        },
+      },
+      {
+        $project: {
+          _id: 1,
+          marksWithImprove: {
+            $map: {
+              input: "$regularMarks",
+              as: "regularMark",
+              in: {
+                courseCode: "$$regularMark.courseCode",
+                courseCredit: "$$regularMark.courseCredit",
+                fullMarks: 100,
+                regular: {
+                  internalMark: "$$regularMark.internalMark",
+                  finalMark: "$$regularMark.finalMark",
+                  totalMark: "$$regularMark.totalMark",
+                  LG: "$$regularMark.LG",
+                  GP: "$$regularMark.GP",
+                },
+                improve: {
+                  $cond: {
+                    if: {
+                      $gt: [
+                        {
+                          $size: {
+                            $filter: {
+                              input: "$improveMarks",
+                              as: "improveMark",
+                              cond: {
+                                $eq: [
+                                  "$$improveMark.courseCode",
+                                  "$$regularMark.courseCode",
+                                ],
+                              },
+                            },
+                          },
+                        },
+                        0,
+                      ],
+                    },
+                    then: {
+                      $let: {
+                        vars: {
+                          matchingImprove: {
+                            $arrayElemAt: [
+                              {
+                                $filter: {
+                                  input: "$improveMarks",
+                                  as: "improveMark",
+                                  cond: {
+                                    $eq: [
+                                      "$$improveMark.courseCode",
+                                      "$$regularMark.courseCode",
+                                    ],
+                                  },
+                                },
+                              },
+                              0,
+                            ],
+                          },
+                        },
+                        in: {
+                          finalMark: "$$matchingImprove.finalMark",
+                          totalMark: "$$matchingImprove.totalMark",
+                          LG: "$$matchingImprove.LG",
+                          GP: "$$matchingImprove.GP",
+                        },
+                      },
+                    },
+                    else: {
+                      finalMark: "",
+                      totalMark: "",
+                      LG: "",
+                      GP: "",
+                    },
+                  },
+                },
+              },
+            },
+          },
+        },
+      },
+    ]);
+
+    const regularPoints = await Mark.aggregate([
+      {
+        $facet: {
+          thisYear: [
+            {
+              $match: {
+                department: dept,
+                currentSession: session,
+                semester: { $in: [firstSemester, secondSemester] },
+                roll,
+              },
+            },
+            {
+              $group: {
+                _id: "$roll",
+                courseMarks: { $push: "$$ROOT" },
+              },
+            },
+            {
+              $lookup: {
+                from: "labmarks",
+                localField: "_id",
+                foreignField: "roll",
+                pipeline: [
+                  {
+                    $match: {
+                      department: dept,
+                      currentSession: session,
+                      semester: { $in: [firstSemester, secondSemester] },
+                    },
+                  },
+                ],
+                as: "labMarks",
+              },
+            },
+            {
+              $lookup: {
+                from: "improves",
+                localField: "_id",
+                foreignField: "roll",
+                pipeline: [
+                  {
+                    $match: {
+                      department: dept,
+                      currentSession: session,
+                      semester: { $in: [firstSemester, secondSemester] },
+                    },
+                  },
+                ],
+                as: "theoryImproves",
+              },
+            },
+            {
+              $lookup: {
+                from: "labimproves",
+                localField: "_id",
+                foreignField: "roll",
+                pipeline: [
+                  {
+                    $match: {
+                      department: dept,
+                      currentSession: session,
+                      semester: { $in: [firstSemester, secondSemester] },
+                    },
+                  },
+                ],
+                as: "labImproves",
+              },
+            },
+            {
+              $project: {
+                courseMarks: {
+                  $map: {
+                    input: "$courseMarks",
+                    as: "mark",
+                    in: {
+                      courseCode: "$$mark.courseCode",
+                      courseCredit: "$$mark.credit",
+                      internalMark: "$$mark.totalInternal",
+                      finalMark: "$$mark.totalExternal",
+                      totalMark: "$$mark.total",
+                      LG: {
+                        $switch: {
+                          branches: [
+                            {
+                              case: { $gte: ["$$mark.total", 80] },
+                              then: "A+",
+                            },
+                            {
+                              case: { $gte: ["$$mark.total", 75] },
+                              then: "A",
+                            },
+                            {
+                              case: { $gte: ["$$mark.total", 70] },
+                              then: "A-",
+                            },
+                            {
+                              case: { $gte: ["$$mark.total", 65] },
+                              then: "B+",
+                            },
+                            {
+                              case: { $gte: ["$$mark.total", 60] },
+                              then: "B",
+                            },
+                            {
+                              case: { $gte: ["$$mark.total", 55] },
+                              then: "B-",
+                            },
+                            {
+                              case: { $gte: ["$$mark.total", 50] },
+                              then: "C+",
+                            },
+                            {
+                              case: { $gte: ["$$mark.total", 45] },
+                              then: "C",
+                            },
+                            {
+                              case: { $gte: ["$$mark.total", 40] },
+                              then: "D",
+                            },
+                          ],
+                          default: "F",
+                        },
+                      },
+                      GP: {
+                        $switch: {
+                          branches: [
+                            {
+                              case: { $gte: ["$$mark.total", 80] },
+                              then: 4.0,
+                            },
+                            {
+                              case: { $gte: ["$$mark.total", 75] },
+                              then: 3.75,
+                            },
+                            {
+                              case: { $gte: ["$$mark.total", 70] },
+                              then: 3.5,
+                            },
+                            {
+                              case: { $gte: ["$$mark.total", 65] },
+                              then: 3.25,
+                            },
+                            {
+                              case: { $gte: ["$$mark.total", 60] },
+                              then: 3.0,
+                            },
+                            {
+                              case: { $gte: ["$$mark.total", 55] },
+                              then: 2.75,
+                            },
+                            {
+                              case: { $gte: ["$$mark.total", 50] },
+                              then: 2.5,
+                            },
+                            {
+                              case: { $gte: ["$$mark.total", 45] },
+                              then: 2.25,
+                            },
+                            {
+                              case: { $gte: ["$$mark.total", 40] },
+                              then: 2.0,
+                            },
+                          ],
+                          default: 0,
+                        },
+                      },
+                    },
+                  },
+                },
+                labMarks: {
+                  $map: {
+                    input: "$labMarks",
+                    as: "lab",
+                    in: {
+                      courseCode: "$$lab.courseCode",
+                      courseCredit: "$$lab.credit",
+                      internalMark: "$$lab.tweentyPercent",
+                      finalMark: "$$lab.eightyPercent",
+                      totalMark: "$$lab.labTotal",
+                      LG: {
+                        $switch: {
+                          branches: [
+                            {
+                              case: { $gte: ["$$lab.labTotal", 80] },
+                              then: "A+",
+                            },
+                            {
+                              case: { $gte: ["$$lab.labTotal", 75] },
+                              then: "A",
+                            },
+                            {
+                              case: { $gte: ["$$lab.labTotal", 70] },
+                              then: "A-",
+                            },
+                            {
+                              case: { $gte: ["$$lab.labTotal", 65] },
+                              then: "B+",
+                            },
+                            {
+                              case: { $gte: ["$$lab.labTotal", 60] },
+                              then: "B",
+                            },
+                            {
+                              case: { $gte: ["$$lab.labTotal", 55] },
+                              then: "B-",
+                            },
+                            {
+                              case: { $gte: ["$$lab.labTotal", 50] },
+                              then: "C+",
+                            },
+                            {
+                              case: { $gte: ["$$lab.labTotal", 45] },
+                              then: "C",
+                            },
+                            {
+                              case: { $gte: ["$$lab.labTotal", 40] },
+                              then: "D",
+                            },
+                          ],
+                          default: "F",
+                        },
+                      },
+                      GP: {
+                        $switch: {
+                          branches: [
+                            {
+                              case: { $gte: ["$$lab.labTotal", 80] },
+                              then: 4.0,
+                            },
+                            {
+                              case: { $gte: ["$$lab.labTotal", 75] },
+                              then: 3.75,
+                            },
+                            {
+                              case: { $gte: ["$$lab.labTotal", 70] },
+                              then: 3.5,
+                            },
+                            {
+                              case: { $gte: ["$$lab.labTotal", 65] },
+                              then: 3.25,
+                            },
+                            {
+                              case: { $gte: ["$$lab.labTotal", 60] },
+                              then: 3.0,
+                            },
+                            {
+                              case: { $gte: ["$$lab.labTotal", 55] },
+                              then: 2.75,
+                            },
+                            {
+                              case: { $gte: ["$$lab.labTotal", 50] },
+                              then: 2.5,
+                            },
+                            {
+                              case: { $gte: ["$$lab.labTotal", 45] },
+                              then: 2.25,
+                            },
+                            {
+                              case: { $gte: ["$$lab.labTotal", 40] },
+                              then: 2.0,
+                            },
+                          ],
+                          default: 0,
+                        },
+                      },
+                    },
+                  },
+                },
+                theoryImproves: {
+                  $map: {
+                    input: "$theoryImproves",
+                    as: "improve",
+                    in: {
+                      courseCode: "$$improve.courseCode",
+                      courseCredit: "$$improve.credit",
+                      internalMark: "$$improve.totalInternal",
+                      finalMark: "$$improve.totalExternal",
+                      totalMark: "$$improve.total",
+                      LG: {
+                        $switch: {
+                          branches: [
+                            {
+                              case: { $gte: ["$$improve.total", 80] },
+                              then: "A+",
+                            },
+                            {
+                              case: { $gte: ["$$improve.total", 75] },
+                              then: "A",
+                            },
+                            {
+                              case: { $gte: ["$$improve.total", 70] },
+                              then: "A-",
+                            },
+                            {
+                              case: { $gte: ["$$improve.total", 65] },
+                              then: "B+",
+                            },
+                            {
+                              case: { $gte: ["$$improve.total", 60] },
+                              then: "B",
+                            },
+                            {
+                              case: { $gte: ["$$improve.total", 55] },
+                              then: "B-",
+                            },
+                            {
+                              case: { $gte: ["$$improve.total", 50] },
+                              then: "C+",
+                            },
+                            {
+                              case: { $gte: ["$$improve.total", 45] },
+                              then: "C",
+                            },
+                            {
+                              case: { $gte: ["$$improve.total", 40] },
+                              then: "D",
+                            },
+                          ],
+                          default: "F",
+                        },
+                      },
+                      GP: {
+                        $switch: {
+                          branches: [
+                            {
+                              case: { $gte: ["$$improve.total", 80] },
+                              then: 4.0,
+                            },
+                            {
+                              case: { $gte: ["$$improve.total", 75] },
+                              then: 3.75,
+                            },
+                            {
+                              case: { $gte: ["$$improve.total", 70] },
+                              then: 3.5,
+                            },
+                            {
+                              case: { $gte: ["$$improve.total", 65] },
+                              then: 3.25,
+                            },
+                            {
+                              case: { $gte: ["$$improve.total", 60] },
+                              then: 3.0,
+                            },
+                            {
+                              case: { $gte: ["$$improve.total", 55] },
+                              then: 2.75,
+                            },
+                            {
+                              case: { $gte: ["$$improve.total", 50] },
+                              then: 2.5,
+                            },
+                            {
+                              case: { $gte: ["$$improve.total", 45] },
+                              then: 2.25,
+                            },
+                            {
+                              case: { $gte: ["$$improve.total", 40] },
+                              then: 2.0,
+                            },
+                          ],
+                          default: 0,
+                        },
+                      },
+                    },
+                  },
+                },
+                labImproves: {
+                  $map: {
+                    input: "$labImproves",
+                    as: "improve",
+                    in: {
+                      courseCode: "$$improve.courseCode",
+                      courseCredit: "$$improve.credit",
+                      internalMark: "$$improve.tweentyPercent",
+                      finalMark: "$$improve.eightyPercent",
+                      totalMark: "$$improve.labTotal",
+                      LG: {
+                        $switch: {
+                          branches: [
+                            {
+                              case: { $gte: ["$$improve.labTotal", 80] },
+                              then: "A+",
+                            },
+                            {
+                              case: { $gte: ["$$improve.labTotal", 75] },
+                              then: "A",
+                            },
+                            {
+                              case: { $gte: ["$$improve.labTotal", 70] },
+                              then: "A-",
+                            },
+                            {
+                              case: { $gte: ["$$improve.labTotal", 65] },
+                              then: "B+",
+                            },
+                            {
+                              case: { $gte: ["$$improve.labTotal", 60] },
+                              then: "B",
+                            },
+                            {
+                              case: { $gte: ["$$improve.labTotal", 55] },
+                              then: "B-",
+                            },
+                            {
+                              case: { $gte: ["$$improve.labTotal", 50] },
+                              then: "C+",
+                            },
+                            {
+                              case: { $gte: ["$$improve.labTotal", 45] },
+                              then: "C",
+                            },
+                            {
+                              case: { $gte: ["$$improve.labTotal", 40] },
+                              then: "D",
+                            },
+                          ],
+                          default: "F",
+                        },
+                      },
+                      GP: {
+                        $switch: {
+                          branches: [
+                            {
+                              case: { $gte: ["$$improve.labTotal", 80] },
+                              then: 4.0,
+                            },
+                            {
+                              case: { $gte: ["$$improve.labTotal", 75] },
+                              then: 3.75,
+                            },
+                            {
+                              case: { $gte: ["$$improve.labTotal", 70] },
+                              then: 3.5,
+                            },
+                            {
+                              case: { $gte: ["$$improve.labTotal", 65] },
+                              then: 3.25,
+                            },
+                            {
+                              case: { $gte: ["$$improve.labTotal", 60] },
+                              then: 3.0,
+                            },
+                            {
+                              case: { $gte: ["$$improve.labTotal", 55] },
+                              then: 2.75,
+                            },
+                            {
+                              case: { $gte: ["$$improve.labTotal", 50] },
+                              then: 2.5,
+                            },
+                            {
+                              case: { $gte: ["$$improve.labTotal", 45] },
+                              then: 2.25,
+                            },
+                            {
+                              case: { $gte: ["$$improve.labTotal", 40] },
+                              then: 2.0,
+                            },
+                          ],
+                          default: 0,
+                        },
+                      },
+                    },
+                  },
+                },
+              },
+            },
+            {
+              $project: {
+                regularMarks: { $concatArrays: ["$courseMarks", "$labMarks"] },
+                improveMarks: {
+                  $concatArrays: ["$theoryImproves", "$labImproves"],
+                },
+              },
+            },
+            {
+              $project: {
+                marksWithImprove: {
+                  $map: {
+                    input: "$regularMarks",
+                    as: "regularMark",
+                    in: {
+                      courseCode: "$$regularMark.courseCode",
+                      courseCredit: "$$regularMark.courseCredit",
+                      fullMarks: 100,
+                      regular: {
+                        internalMark: "$$regularMark.internalMark",
+                        finalMark: "$$regularMark.finalMark",
+                        totalMark: "$$regularMark.totalMark",
+                        LG: "$$regularMark.LG",
+                        GP: "$$regularMark.GP",
+                      },
+                      improve: {
+                        $cond: {
+                          if: {
+                            $gt: [
+                              {
+                                $size: {
+                                  $filter: {
+                                    input: "$improveMarks",
+                                    as: "improveMark",
+                                    cond: {
+                                      $eq: [
+                                        "$$improveMark.courseCode",
+                                        "$$regularMark.courseCode",
+                                      ],
+                                    },
+                                  },
+                                },
+                              },
+                              0,
+                            ],
+                          },
+                          then: {
+                            $let: {
+                              vars: {
+                                matchingImprove: {
+                                  $arrayElemAt: [
+                                    {
+                                      $filter: {
+                                        input: "$improveMarks",
+                                        as: "improveMark",
+                                        cond: {
+                                          $eq: [
+                                            "$$improveMark.courseCode",
+                                            "$$regularMark.courseCode",
+                                          ],
+                                        },
+                                      },
+                                    },
+                                    0,
+                                  ],
+                                },
+                              },
+                              in: {
+                                finalMark: "$$matchingImprove.finalMark",
+                                totalMark: "$$matchingImprove.totalMark",
+                                LG: "$$matchingImprove.LG",
+                                GP: "$$matchingImprove.GP",
+                              },
+                            },
+                          },
+                          else: {
+                            finalMark: "",
+                            totalMark: "",
+                            LG: "",
+                            GP: "",
+                          },
+                        },
+                      },
+                    },
+                  },
+                },
+              },
+            },
+            {
+              $project: {
+                cgp: {
+                  $reduce: {
+                    input: "$marksWithImprove",
+                    initialValue: 0,
+                    in: {
+                      $sum: [
+                        "$$value",
+                        {
+                          $multiply: [
+                            "$$this.courseCredit",
+                            "$$this.regular.GP",
+                          ],
+                        },
+                      ],
+                    },
+                  },
+                },
+                tc: {
+                  $reduce: {
+                    input: "$marksWithImprove",
+                    initialValue: 0,
+                    in: {
+                      $sum: ["$$value", "$$this.courseCredit"],
+                    },
+                  },
+                },
+                ec: {
+                  $reduce: {
+                    input: "$marksWithImprove",
+                    initialValue: 0,
+                    in: {
+                      $cond: {
+                        if: { $eq: ["$$this.regular.GP", 0] },
+                        then: { $sum: ["$$value", 0] },
+                        else: { $sum: ["$$value", "$$this.courseCredit"] },
+                      },
+                    },
+                  },
+                },
+              },
+            },
+            {
+              $project: {
+                _id: 0,
+                cgp: 1,
+                ec: 1,
+                tc: 1,
+                cgpa: {
+                  $round: [{ $divide: ["$cgp", "$tc"] }, 2],
+                },
+              },
+            },
+          ],
+          previousYear: [
+            {
+              $match: {
+                department: dept,
+                currentSession: session,
+                semester: { $gte: 1, $lte: prevMaxSemester },
+                roll,
+              },
+            },
+            {
+              $group: {
+                _id: "$roll",
+                courseMarks: { $push: "$$ROOT" },
+              },
+            },
+            {
+              $lookup: {
+                from: "labmarks",
+                localField: "_id",
+                foreignField: "roll",
+                pipeline: [
+                  {
+                    $match: {
+                      department: dept,
+                      currentSession: session,
+                      semester: { $gte: 1, $lte: prevMaxSemester },
+                    },
+                  },
+                ],
+                as: "labMarks",
+              },
+            },
+            {
+              $lookup: {
+                from: "improves",
+                localField: "_id",
+                foreignField: "roll",
+                pipeline: [
+                  {
+                    $match: {
+                      department: dept,
+                      currentSession: session,
+                      semester: { $gte: 1, $lte: prevMaxSemester },
+                    },
+                  },
+                ],
+                as: "theoryImproves",
+              },
+            },
+            {
+              $lookup: {
+                from: "labimproves",
+                localField: "_id",
+                foreignField: "roll",
+                pipeline: [
+                  {
+                    $match: {
+                      department: dept,
+                      currentSession: session,
+                      semester: { $gte: 1, $lte: prevMaxSemester },
+                    },
+                  },
+                ],
+                as: "labImproves",
+              },
+            },
+            {
+              $project: {
+                courseMarks: {
+                  $map: {
+                    input: "$courseMarks",
+                    as: "mark",
+                    in: {
+                      courseCode: "$$mark.courseCode",
+                      courseCredit: "$$mark.credit",
+                      internalMark: "$$mark.totalInternal",
+                      finalMark: "$$mark.totalExternal",
+                      totalMark: "$$mark.total",
+                      LG: {
+                        $switch: {
+                          branches: [
+                            {
+                              case: { $gte: ["$$mark.total", 80] },
+                              then: "A+",
+                            },
+                            {
+                              case: { $gte: ["$$mark.total", 75] },
+                              then: "A",
+                            },
+                            {
+                              case: { $gte: ["$$mark.total", 70] },
+                              then: "A-",
+                            },
+                            {
+                              case: { $gte: ["$$mark.total", 65] },
+                              then: "B+",
+                            },
+                            {
+                              case: { $gte: ["$$mark.total", 60] },
+                              then: "B",
+                            },
+                            {
+                              case: { $gte: ["$$mark.total", 55] },
+                              then: "B-",
+                            },
+                            {
+                              case: { $gte: ["$$mark.total", 50] },
+                              then: "C+",
+                            },
+                            {
+                              case: { $gte: ["$$mark.total", 45] },
+                              then: "C",
+                            },
+                            {
+                              case: { $gte: ["$$mark.total", 40] },
+                              then: "D",
+                            },
+                          ],
+                          default: "F",
+                        },
+                      },
+                      GP: {
+                        $switch: {
+                          branches: [
+                            {
+                              case: { $gte: ["$$mark.total", 80] },
+                              then: 4.0,
+                            },
+                            {
+                              case: { $gte: ["$$mark.total", 75] },
+                              then: 3.75,
+                            },
+                            {
+                              case: { $gte: ["$$mark.total", 70] },
+                              then: 3.5,
+                            },
+                            {
+                              case: { $gte: ["$$mark.total", 65] },
+                              then: 3.25,
+                            },
+                            {
+                              case: { $gte: ["$$mark.total", 60] },
+                              then: 3.0,
+                            },
+                            {
+                              case: { $gte: ["$$mark.total", 55] },
+                              then: 2.75,
+                            },
+                            {
+                              case: { $gte: ["$$mark.total", 50] },
+                              then: 2.5,
+                            },
+                            {
+                              case: { $gte: ["$$mark.total", 45] },
+                              then: 2.25,
+                            },
+                            {
+                              case: { $gte: ["$$mark.total", 40] },
+                              then: 2.0,
+                            },
+                          ],
+                          default: 0,
+                        },
+                      },
+                    },
+                  },
+                },
+                labMarks: {
+                  $map: {
+                    input: "$labMarks",
+                    as: "lab",
+                    in: {
+                      courseCode: "$$lab.courseCode",
+                      courseCredit: "$$lab.credit",
+                      internalMark: "$$lab.tweentyPercent",
+                      finalMark: "$$lab.eightyPercent",
+                      totalMark: "$$lab.labTotal",
+                      LG: {
+                        $switch: {
+                          branches: [
+                            {
+                              case: { $gte: ["$$lab.labTotal", 80] },
+                              then: "A+",
+                            },
+                            {
+                              case: { $gte: ["$$lab.labTotal", 75] },
+                              then: "A",
+                            },
+                            {
+                              case: { $gte: ["$$lab.labTotal", 70] },
+                              then: "A-",
+                            },
+                            {
+                              case: { $gte: ["$$lab.labTotal", 65] },
+                              then: "B+",
+                            },
+                            {
+                              case: { $gte: ["$$lab.labTotal", 60] },
+                              then: "B",
+                            },
+                            {
+                              case: { $gte: ["$$lab.labTotal", 55] },
+                              then: "B-",
+                            },
+                            {
+                              case: { $gte: ["$$lab.labTotal", 50] },
+                              then: "C+",
+                            },
+                            {
+                              case: { $gte: ["$$lab.labTotal", 45] },
+                              then: "C",
+                            },
+                            {
+                              case: { $gte: ["$$lab.labTotal", 40] },
+                              then: "D",
+                            },
+                          ],
+                          default: "F",
+                        },
+                      },
+                      GP: {
+                        $switch: {
+                          branches: [
+                            {
+                              case: { $gte: ["$$lab.labTotal", 80] },
+                              then: 4.0,
+                            },
+                            {
+                              case: { $gte: ["$$lab.labTotal", 75] },
+                              then: 3.75,
+                            },
+                            {
+                              case: { $gte: ["$$lab.labTotal", 70] },
+                              then: 3.5,
+                            },
+                            {
+                              case: { $gte: ["$$lab.labTotal", 65] },
+                              then: 3.25,
+                            },
+                            {
+                              case: { $gte: ["$$lab.labTotal", 60] },
+                              then: 3.0,
+                            },
+                            {
+                              case: { $gte: ["$$lab.labTotal", 55] },
+                              then: 2.75,
+                            },
+                            {
+                              case: { $gte: ["$$lab.labTotal", 50] },
+                              then: 2.5,
+                            },
+                            {
+                              case: { $gte: ["$$lab.labTotal", 45] },
+                              then: 2.25,
+                            },
+                            {
+                              case: { $gte: ["$$lab.labTotal", 40] },
+                              then: 2.0,
+                            },
+                          ],
+                          default: 0,
+                        },
+                      },
+                    },
+                  },
+                },
+                theoryImproves: {
+                  $map: {
+                    input: "$theoryImproves",
+                    as: "improve",
+                    in: {
+                      courseCode: "$$improve.courseCode",
+                      courseCredit: "$$improve.credit",
+                      internalMark: "$$improve.totalInternal",
+                      finalMark: "$$improve.totalExternal",
+                      totalMark: "$$improve.total",
+                      LG: {
+                        $switch: {
+                          branches: [
+                            {
+                              case: { $gte: ["$$improve.total", 80] },
+                              then: "A+",
+                            },
+                            {
+                              case: { $gte: ["$$improve.total", 75] },
+                              then: "A",
+                            },
+                            {
+                              case: { $gte: ["$$improve.total", 70] },
+                              then: "A-",
+                            },
+                            {
+                              case: { $gte: ["$$improve.total", 65] },
+                              then: "B+",
+                            },
+                            {
+                              case: { $gte: ["$$improve.total", 60] },
+                              then: "B",
+                            },
+                            {
+                              case: { $gte: ["$$improve.total", 55] },
+                              then: "B-",
+                            },
+                            {
+                              case: { $gte: ["$$improve.total", 50] },
+                              then: "C+",
+                            },
+                            {
+                              case: { $gte: ["$$improve.total", 45] },
+                              then: "C",
+                            },
+                            {
+                              case: { $gte: ["$$improve.total", 40] },
+                              then: "D",
+                            },
+                          ],
+                          default: "F",
+                        },
+                      },
+                      GP: {
+                        $switch: {
+                          branches: [
+                            {
+                              case: { $gte: ["$$improve.total", 80] },
+                              then: 4.0,
+                            },
+                            {
+                              case: { $gte: ["$$improve.total", 75] },
+                              then: 3.75,
+                            },
+                            {
+                              case: { $gte: ["$$improve.total", 70] },
+                              then: 3.5,
+                            },
+                            {
+                              case: { $gte: ["$$improve.total", 65] },
+                              then: 3.25,
+                            },
+                            {
+                              case: { $gte: ["$$improve.total", 60] },
+                              then: 3.0,
+                            },
+                            {
+                              case: { $gte: ["$$improve.total", 55] },
+                              then: 2.75,
+                            },
+                            {
+                              case: { $gte: ["$$improve.total", 50] },
+                              then: 2.5,
+                            },
+                            {
+                              case: { $gte: ["$$improve.total", 45] },
+                              then: 2.25,
+                            },
+                            {
+                              case: { $gte: ["$$improve.total", 40] },
+                              then: 2.0,
+                            },
+                          ],
+                          default: 0,
+                        },
+                      },
+                    },
+                  },
+                },
+                labImproves: {
+                  $map: {
+                    input: "$labImproves",
+                    as: "improve",
+                    in: {
+                      courseCode: "$$improve.courseCode",
+                      courseCredit: "$$improve.credit",
+                      internalMark: "$$improve.tweentyPercent",
+                      finalMark: "$$improve.eightyPercent",
+                      totalMark: "$$improve.labTotal",
+                      LG: {
+                        $switch: {
+                          branches: [
+                            {
+                              case: { $gte: ["$$improve.labTotal", 80] },
+                              then: "A+",
+                            },
+                            {
+                              case: { $gte: ["$$improve.labTotal", 75] },
+                              then: "A",
+                            },
+                            {
+                              case: { $gte: ["$$improve.labTotal", 70] },
+                              then: "A-",
+                            },
+                            {
+                              case: { $gte: ["$$improve.labTotal", 65] },
+                              then: "B+",
+                            },
+                            {
+                              case: { $gte: ["$$improve.labTotal", 60] },
+                              then: "B",
+                            },
+                            {
+                              case: { $gte: ["$$improve.labTotal", 55] },
+                              then: "B-",
+                            },
+                            {
+                              case: { $gte: ["$$improve.labTotal", 50] },
+                              then: "C+",
+                            },
+                            {
+                              case: { $gte: ["$$improve.labTotal", 45] },
+                              then: "C",
+                            },
+                            {
+                              case: { $gte: ["$$improve.labTotal", 40] },
+                              then: "D",
+                            },
+                          ],
+                          default: "F",
+                        },
+                      },
+                      GP: {
+                        $switch: {
+                          branches: [
+                            {
+                              case: { $gte: ["$$improve.labTotal", 80] },
+                              then: 4.0,
+                            },
+                            {
+                              case: { $gte: ["$$improve.labTotal", 75] },
+                              then: 3.75,
+                            },
+                            {
+                              case: { $gte: ["$$improve.labTotal", 70] },
+                              then: 3.5,
+                            },
+                            {
+                              case: { $gte: ["$$improve.labTotal", 65] },
+                              then: 3.25,
+                            },
+                            {
+                              case: { $gte: ["$$improve.labTotal", 60] },
+                              then: 3.0,
+                            },
+                            {
+                              case: { $gte: ["$$improve.labTotal", 55] },
+                              then: 2.75,
+                            },
+                            {
+                              case: { $gte: ["$$improve.labTotal", 50] },
+                              then: 2.5,
+                            },
+                            {
+                              case: { $gte: ["$$improve.labTotal", 45] },
+                              then: 2.25,
+                            },
+                            {
+                              case: { $gte: ["$$improve.labTotal", 40] },
+                              then: 2.0,
+                            },
+                          ],
+                          default: 0,
+                        },
+                      },
+                    },
+                  },
+                },
+              },
+            },
+            {
+              $project: {
+                regularMarks: { $concatArrays: ["$courseMarks", "$labMarks"] },
+                improveMarks: {
+                  $concatArrays: ["$theoryImproves", "$labImproves"],
+                },
+              },
+            },
+            {
+              $project: {
+                marksWithImprove: {
+                  $map: {
+                    input: "$regularMarks",
+                    as: "regularMark",
+                    in: {
+                      courseCode: "$$regularMark.courseCode",
+                      courseCredit: "$$regularMark.courseCredit",
+                      fullMarks: 100,
+                      regular: {
+                        internalMark: "$$regularMark.internalMark",
+                        finalMark: "$$regularMark.finalMark",
+                        totalMark: "$$regularMark.totalMark",
+                        LG: "$$regularMark.LG",
+                        GP: "$$regularMark.GP",
+                      },
+                      improve: {
+                        $cond: {
+                          if: {
+                            $gt: [
+                              {
+                                $size: {
+                                  $filter: {
+                                    input: "$improveMarks",
+                                    as: "improveMark",
+                                    cond: {
+                                      $eq: [
+                                        "$$improveMark.courseCode",
+                                        "$$regularMark.courseCode",
+                                      ],
+                                    },
+                                  },
+                                },
+                              },
+                              0,
+                            ],
+                          },
+                          then: {
+                            $let: {
+                              vars: {
+                                matchingImprove: {
+                                  $arrayElemAt: [
+                                    {
+                                      $filter: {
+                                        input: "$improveMarks",
+                                        as: "improveMark",
+                                        cond: {
+                                          $eq: [
+                                            "$$improveMark.courseCode",
+                                            "$$regularMark.courseCode",
+                                          ],
+                                        },
+                                      },
+                                    },
+                                    0,
+                                  ],
+                                },
+                              },
+                              in: {
+                                finalMark: "$$matchingImprove.finalMark",
+                                totalMark: "$$matchingImprove.totalMark",
+                                LG: "$$matchingImprove.LG",
+                                GP: "$$matchingImprove.GP",
+                              },
+                            },
+                          },
+                          else: {
+                            finalMark: "",
+                            totalMark: "",
+                            LG: "",
+                            GP: "",
+                          },
+                        },
+                      },
+                    },
+                  },
+                },
+              },
+            },
+            {
+              $project: {
+                cgp: {
+                  $reduce: {
+                    input: "$marksWithImprove",
+                    initialValue: 0,
+                    in: {
+                      $sum: [
+                        "$$value",
+                        {
+                          $multiply: [
+                            "$$this.courseCredit",
+                            "$$this.regular.GP",
+                          ],
+                        },
+                      ],
+                    },
+                  },
+                },
+                tc: {
+                  $reduce: {
+                    input: "$marksWithImprove",
+                    initialValue: 0,
+                    in: {
+                      $sum: ["$$value", "$$this.courseCredit"],
+                    },
+                  },
+                },
+                ec: {
+                  $reduce: {
+                    input: "$marksWithImprove",
+                    initialValue: 0,
+                    in: {
+                      $cond: {
+                        if: { $eq: ["$$this.regular.GP", 0] },
+                        then: { $sum: ["$$value", 0] },
+                        else: { $sum: ["$$value", "$$this.courseCredit"] },
+                      },
+                    },
+                  },
+                },
+              },
+            },
+            {
+              $project: {
+                _id: 0,
+                cgp: 1,
+                ec: 1,
+                tc: 1,
+                cgpa: {
+                  $round: [{ $divide: ["$cgp", "$tc"] }, 2],
+                },
+              },
+            },
+          ],
+          uptoThisYear: [
+            {
+              $match: {
+                department: dept,
+                currentSession: session,
+                semester: { $gte: 1, $lte: secondSemester },
+                roll,
+              },
+            },
+            {
+              $group: {
+                _id: "$roll",
+                courseMarks: { $push: "$$ROOT" },
+              },
+            },
+            {
+              $lookup: {
+                from: "labmarks",
+                localField: "_id",
+                foreignField: "roll",
+                pipeline: [
+                  {
+                    $match: {
+                      department: dept,
+                      currentSession: session,
+                      semester: { $gte: 1, $lte: secondSemester },
+                    },
+                  },
+                ],
+                as: "labMarks",
+              },
+            },
+            {
+              $lookup: {
+                from: "improves",
+                localField: "_id",
+                foreignField: "roll",
+                pipeline: [
+                  {
+                    $match: {
+                      department: dept,
+                      currentSession: session,
+                      semester: { $gte: 1, $lte: secondSemester },
+                    },
+                  },
+                ],
+                as: "theoryImproves",
+              },
+            },
+            {
+              $lookup: {
+                from: "labimproves",
+                localField: "_id",
+                foreignField: "roll",
+                pipeline: [
+                  {
+                    $match: {
+                      department: dept,
+                      currentSession: session,
+                      semester: { $gte: 1, $lte: secondSemester },
+                    },
+                  },
+                ],
+                as: "labImproves",
+              },
+            },
+            {
+              $project: {
+                courseMarks: {
+                  $map: {
+                    input: "$courseMarks",
+                    as: "mark",
+                    in: {
+                      courseCode: "$$mark.courseCode",
+                      courseCredit: "$$mark.credit",
+                      internalMark: "$$mark.totalInternal",
+                      finalMark: "$$mark.totalExternal",
+                      totalMark: "$$mark.total",
+                      LG: {
+                        $switch: {
+                          branches: [
+                            {
+                              case: { $gte: ["$$mark.total", 80] },
+                              then: "A+",
+                            },
+                            {
+                              case: { $gte: ["$$mark.total", 75] },
+                              then: "A",
+                            },
+                            {
+                              case: { $gte: ["$$mark.total", 70] },
+                              then: "A-",
+                            },
+                            {
+                              case: { $gte: ["$$mark.total", 65] },
+                              then: "B+",
+                            },
+                            {
+                              case: { $gte: ["$$mark.total", 60] },
+                              then: "B",
+                            },
+                            {
+                              case: { $gte: ["$$mark.total", 55] },
+                              then: "B-",
+                            },
+                            {
+                              case: { $gte: ["$$mark.total", 50] },
+                              then: "C+",
+                            },
+                            {
+                              case: { $gte: ["$$mark.total", 45] },
+                              then: "C",
+                            },
+                            {
+                              case: { $gte: ["$$mark.total", 40] },
+                              then: "D",
+                            },
+                          ],
+                          default: "F",
+                        },
+                      },
+                      GP: {
+                        $switch: {
+                          branches: [
+                            {
+                              case: { $gte: ["$$mark.total", 80] },
+                              then: 4.0,
+                            },
+                            {
+                              case: { $gte: ["$$mark.total", 75] },
+                              then: 3.75,
+                            },
+                            {
+                              case: { $gte: ["$$mark.total", 70] },
+                              then: 3.5,
+                            },
+                            {
+                              case: { $gte: ["$$mark.total", 65] },
+                              then: 3.25,
+                            },
+                            {
+                              case: { $gte: ["$$mark.total", 60] },
+                              then: 3.0,
+                            },
+                            {
+                              case: { $gte: ["$$mark.total", 55] },
+                              then: 2.75,
+                            },
+                            {
+                              case: { $gte: ["$$mark.total", 50] },
+                              then: 2.5,
+                            },
+                            {
+                              case: { $gte: ["$$mark.total", 45] },
+                              then: 2.25,
+                            },
+                            {
+                              case: { $gte: ["$$mark.total", 40] },
+                              then: 2.0,
+                            },
+                          ],
+                          default: 0,
+                        },
+                      },
+                    },
+                  },
+                },
+                labMarks: {
+                  $map: {
+                    input: "$labMarks",
+                    as: "lab",
+                    in: {
+                      courseCode: "$$lab.courseCode",
+                      courseCredit: "$$lab.credit",
+                      internalMark: "$$lab.tweentyPercent",
+                      finalMark: "$$lab.eightyPercent",
+                      totalMark: "$$lab.labTotal",
+                      LG: {
+                        $switch: {
+                          branches: [
+                            {
+                              case: { $gte: ["$$lab.labTotal", 80] },
+                              then: "A+",
+                            },
+                            {
+                              case: { $gte: ["$$lab.labTotal", 75] },
+                              then: "A",
+                            },
+                            {
+                              case: { $gte: ["$$lab.labTotal", 70] },
+                              then: "A-",
+                            },
+                            {
+                              case: { $gte: ["$$lab.labTotal", 65] },
+                              then: "B+",
+                            },
+                            {
+                              case: { $gte: ["$$lab.labTotal", 60] },
+                              then: "B",
+                            },
+                            {
+                              case: { $gte: ["$$lab.labTotal", 55] },
+                              then: "B-",
+                            },
+                            {
+                              case: { $gte: ["$$lab.labTotal", 50] },
+                              then: "C+",
+                            },
+                            {
+                              case: { $gte: ["$$lab.labTotal", 45] },
+                              then: "C",
+                            },
+                            {
+                              case: { $gte: ["$$lab.labTotal", 40] },
+                              then: "D",
+                            },
+                          ],
+                          default: "F",
+                        },
+                      },
+                      GP: {
+                        $switch: {
+                          branches: [
+                            {
+                              case: { $gte: ["$$lab.labTotal", 80] },
+                              then: 4.0,
+                            },
+                            {
+                              case: { $gte: ["$$lab.labTotal", 75] },
+                              then: 3.75,
+                            },
+                            {
+                              case: { $gte: ["$$lab.labTotal", 70] },
+                              then: 3.5,
+                            },
+                            {
+                              case: { $gte: ["$$lab.labTotal", 65] },
+                              then: 3.25,
+                            },
+                            {
+                              case: { $gte: ["$$lab.labTotal", 60] },
+                              then: 3.0,
+                            },
+                            {
+                              case: { $gte: ["$$lab.labTotal", 55] },
+                              then: 2.75,
+                            },
+                            {
+                              case: { $gte: ["$$lab.labTotal", 50] },
+                              then: 2.5,
+                            },
+                            {
+                              case: { $gte: ["$$lab.labTotal", 45] },
+                              then: 2.25,
+                            },
+                            {
+                              case: { $gte: ["$$lab.labTotal", 40] },
+                              then: 2.0,
+                            },
+                          ],
+                          default: 0,
+                        },
+                      },
+                    },
+                  },
+                },
+                theoryImproves: {
+                  $map: {
+                    input: "$theoryImproves",
+                    as: "improve",
+                    in: {
+                      courseCode: "$$improve.courseCode",
+                      courseCredit: "$$improve.credit",
+                      internalMark: "$$improve.totalInternal",
+                      finalMark: "$$improve.totalExternal",
+                      totalMark: "$$improve.total",
+                      LG: {
+                        $switch: {
+                          branches: [
+                            {
+                              case: { $gte: ["$$improve.total", 80] },
+                              then: "A+",
+                            },
+                            {
+                              case: { $gte: ["$$improve.total", 75] },
+                              then: "A",
+                            },
+                            {
+                              case: { $gte: ["$$improve.total", 70] },
+                              then: "A-",
+                            },
+                            {
+                              case: { $gte: ["$$improve.total", 65] },
+                              then: "B+",
+                            },
+                            {
+                              case: { $gte: ["$$improve.total", 60] },
+                              then: "B",
+                            },
+                            {
+                              case: { $gte: ["$$improve.total", 55] },
+                              then: "B-",
+                            },
+                            {
+                              case: { $gte: ["$$improve.total", 50] },
+                              then: "C+",
+                            },
+                            {
+                              case: { $gte: ["$$improve.total", 45] },
+                              then: "C",
+                            },
+                            {
+                              case: { $gte: ["$$improve.total", 40] },
+                              then: "D",
+                            },
+                          ],
+                          default: "F",
+                        },
+                      },
+                      GP: {
+                        $switch: {
+                          branches: [
+                            {
+                              case: { $gte: ["$$improve.total", 80] },
+                              then: 4.0,
+                            },
+                            {
+                              case: { $gte: ["$$improve.total", 75] },
+                              then: 3.75,
+                            },
+                            {
+                              case: { $gte: ["$$improve.total", 70] },
+                              then: 3.5,
+                            },
+                            {
+                              case: { $gte: ["$$improve.total", 65] },
+                              then: 3.25,
+                            },
+                            {
+                              case: { $gte: ["$$improve.total", 60] },
+                              then: 3.0,
+                            },
+                            {
+                              case: { $gte: ["$$improve.total", 55] },
+                              then: 2.75,
+                            },
+                            {
+                              case: { $gte: ["$$improve.total", 50] },
+                              then: 2.5,
+                            },
+                            {
+                              case: { $gte: ["$$improve.total", 45] },
+                              then: 2.25,
+                            },
+                            {
+                              case: { $gte: ["$$improve.total", 40] },
+                              then: 2.0,
+                            },
+                          ],
+                          default: 0,
+                        },
+                      },
+                    },
+                  },
+                },
+                labImproves: {
+                  $map: {
+                    input: "$labImproves",
+                    as: "improve",
+                    in: {
+                      courseCode: "$$improve.courseCode",
+                      courseCredit: "$$improve.credit",
+                      internalMark: "$$improve.tweentyPercent",
+                      finalMark: "$$improve.eightyPercent",
+                      totalMark: "$$improve.labTotal",
+                      LG: {
+                        $switch: {
+                          branches: [
+                            {
+                              case: { $gte: ["$$improve.labTotal", 80] },
+                              then: "A+",
+                            },
+                            {
+                              case: { $gte: ["$$improve.labTotal", 75] },
+                              then: "A",
+                            },
+                            {
+                              case: { $gte: ["$$improve.labTotal", 70] },
+                              then: "A-",
+                            },
+                            {
+                              case: { $gte: ["$$improve.labTotal", 65] },
+                              then: "B+",
+                            },
+                            {
+                              case: { $gte: ["$$improve.labTotal", 60] },
+                              then: "B",
+                            },
+                            {
+                              case: { $gte: ["$$improve.labTotal", 55] },
+                              then: "B-",
+                            },
+                            {
+                              case: { $gte: ["$$improve.labTotal", 50] },
+                              then: "C+",
+                            },
+                            {
+                              case: { $gte: ["$$improve.labTotal", 45] },
+                              then: "C",
+                            },
+                            {
+                              case: { $gte: ["$$improve.labTotal", 40] },
+                              then: "D",
+                            },
+                          ],
+                          default: "F",
+                        },
+                      },
+                      GP: {
+                        $switch: {
+                          branches: [
+                            {
+                              case: { $gte: ["$$improve.labTotal", 80] },
+                              then: 4.0,
+                            },
+                            {
+                              case: { $gte: ["$$improve.labTotal", 75] },
+                              then: 3.75,
+                            },
+                            {
+                              case: { $gte: ["$$improve.labTotal", 70] },
+                              then: 3.5,
+                            },
+                            {
+                              case: { $gte: ["$$improve.labTotal", 65] },
+                              then: 3.25,
+                            },
+                            {
+                              case: { $gte: ["$$improve.labTotal", 60] },
+                              then: 3.0,
+                            },
+                            {
+                              case: { $gte: ["$$improve.labTotal", 55] },
+                              then: 2.75,
+                            },
+                            {
+                              case: { $gte: ["$$improve.labTotal", 50] },
+                              then: 2.5,
+                            },
+                            {
+                              case: { $gte: ["$$improve.labTotal", 45] },
+                              then: 2.25,
+                            },
+                            {
+                              case: { $gte: ["$$improve.labTotal", 40] },
+                              then: 2.0,
+                            },
+                          ],
+                          default: 0,
+                        },
+                      },
+                    },
+                  },
+                },
+              },
+            },
+            {
+              $project: {
+                regularMarks: { $concatArrays: ["$courseMarks", "$labMarks"] },
+                improveMarks: {
+                  $concatArrays: ["$theoryImproves", "$labImproves"],
+                },
+              },
+            },
+            {
+              $project: {
+                marksWithImprove: {
+                  $map: {
+                    input: "$regularMarks",
+                    as: "regularMark",
+                    in: {
+                      courseCode: "$$regularMark.courseCode",
+                      courseCredit: "$$regularMark.courseCredit",
+                      fullMarks: 100,
+                      regular: {
+                        internalMark: "$$regularMark.internalMark",
+                        finalMark: "$$regularMark.finalMark",
+                        totalMark: "$$regularMark.totalMark",
+                        LG: "$$regularMark.LG",
+                        GP: "$$regularMark.GP",
+                      },
+                      improve: {
+                        $cond: {
+                          if: {
+                            $gt: [
+                              {
+                                $size: {
+                                  $filter: {
+                                    input: "$improveMarks",
+                                    as: "improveMark",
+                                    cond: {
+                                      $eq: [
+                                        "$$improveMark.courseCode",
+                                        "$$regularMark.courseCode",
+                                      ],
+                                    },
+                                  },
+                                },
+                              },
+                              0,
+                            ],
+                          },
+                          then: {
+                            $let: {
+                              vars: {
+                                matchingImprove: {
+                                  $arrayElemAt: [
+                                    {
+                                      $filter: {
+                                        input: "$improveMarks",
+                                        as: "improveMark",
+                                        cond: {
+                                          $eq: [
+                                            "$$improveMark.courseCode",
+                                            "$$regularMark.courseCode",
+                                          ],
+                                        },
+                                      },
+                                    },
+                                    0,
+                                  ],
+                                },
+                              },
+                              in: {
+                                finalMark: "$$matchingImprove.finalMark",
+                                totalMark: "$$matchingImprove.totalMark",
+                                LG: "$$matchingImprove.LG",
+                                GP: "$$matchingImprove.GP",
+                              },
+                            },
+                          },
+                          else: {
+                            finalMark: "",
+                            totalMark: "",
+                            LG: "",
+                            GP: "",
+                          },
+                        },
+                      },
+                    },
+                  },
+                },
+              },
+            },
+            {
+              $project: {
+                cgp: {
+                  $reduce: {
+                    input: "$marksWithImprove",
+                    initialValue: 0,
+                    in: {
+                      $sum: [
+                        "$$value",
+                        {
+                          $multiply: [
+                            "$$this.courseCredit",
+                            "$$this.regular.GP",
+                          ],
+                        },
+                      ],
+                    },
+                  },
+                },
+                tc: {
+                  $reduce: {
+                    input: "$marksWithImprove",
+                    initialValue: 0,
+                    in: {
+                      $sum: ["$$value", "$$this.courseCredit"],
+                    },
+                  },
+                },
+                ec: {
+                  $reduce: {
+                    input: "$marksWithImprove",
+                    initialValue: 0,
+                    in: {
+                      $cond: {
+                        if: { $eq: ["$$this.regular.GP", 0] },
+                        then: { $sum: ["$$value", 0] },
+                        else: { $sum: ["$$value", "$$this.courseCredit"] },
+                      },
+                    },
+                  },
+                },
+              },
+            },
+            {
+              $project: {
+                _id: 0,
+                cgp: 1,
+                ec: 1,
+                tc: 1,
+                cgpa: {
+                  $round: [{ $divide: ["$cgp", "$tc"] }, 2],
+                },
+              },
+            },
+          ],
+        },
+      },
+      {
+        $unwind: "$thisYear",
+      },
+      {
+        $unwind: "$previousYear",
+      },
+      {
+        $unwind: "$uptoThisYear",
+      },
+    ]);
+
+    const improvePoints = await Mark.aggregate([
+      {
+        $facet: {
+          thisYear: [
+            {
+              $match: {
+                department: dept,
+                currentSession: session,
+                semester: { $in: [firstSemester, secondSemester] },
+                roll,
+              },
+            },
+            {
+              $group: {
+                _id: "$roll",
+                courseMarks: { $push: "$$ROOT" },
+              },
+            },
+            {
+              $lookup: {
+                from: "labmarks",
+                localField: "_id",
+                foreignField: "roll",
+                pipeline: [
+                  {
+                    $match: {
+                      department: dept,
+                      currentSession: session,
+                      semester: { $in: [firstSemester, secondSemester] },
+                    },
+                  },
+                ],
+                as: "labMarks",
+              },
+            },
+            {
+              $lookup: {
+                from: "improves",
+                localField: "_id",
+                foreignField: "roll",
+                pipeline: [
+                  {
+                    $match: {
+                      department: dept,
+                      currentSession: session,
+                      semester: { $in: [firstSemester, secondSemester] },
+                    },
+                  },
+                ],
+                as: "theoryImproves",
+              },
+            },
+            {
+              $lookup: {
+                from: "labimproves",
+                localField: "_id",
+                foreignField: "roll",
+                pipeline: [
+                  {
+                    $match: {
+                      department: dept,
+                      currentSession: session,
+                      semester: { $in: [firstSemester, secondSemester] },
+                    },
+                  },
+                ],
+                as: "labImproves",
+              },
+            },
+            {
+              $project: {
+                courseMarks: {
+                  $map: {
+                    input: "$courseMarks",
+                    as: "mark",
+                    in: {
+                      courseCode: "$$mark.courseCode",
+                      courseCredit: "$$mark.credit",
+                      internalMark: "$$mark.totalInternal",
+                      finalMark: "$$mark.totalExternal",
+                      totalMark: "$$mark.total",
+                      LG: {
+                        $switch: {
+                          branches: [
+                            {
+                              case: { $gte: ["$$mark.total", 80] },
+                              then: "A+",
+                            },
+                            {
+                              case: { $gte: ["$$mark.total", 75] },
+                              then: "A",
+                            },
+                            {
+                              case: { $gte: ["$$mark.total", 70] },
+                              then: "A-",
+                            },
+                            {
+                              case: { $gte: ["$$mark.total", 65] },
+                              then: "B+",
+                            },
+                            {
+                              case: { $gte: ["$$mark.total", 60] },
+                              then: "B",
+                            },
+                            {
+                              case: { $gte: ["$$mark.total", 55] },
+                              then: "B-",
+                            },
+                            {
+                              case: { $gte: ["$$mark.total", 50] },
+                              then: "C+",
+                            },
+                            {
+                              case: { $gte: ["$$mark.total", 45] },
+                              then: "C",
+                            },
+                            {
+                              case: { $gte: ["$$mark.total", 40] },
+                              then: "D",
+                            },
+                          ],
+                          default: "F",
+                        },
+                      },
+                      GP: {
+                        $switch: {
+                          branches: [
+                            {
+                              case: { $gte: ["$$mark.total", 80] },
+                              then: 4.0,
+                            },
+                            {
+                              case: { $gte: ["$$mark.total", 75] },
+                              then: 3.75,
+                            },
+                            {
+                              case: { $gte: ["$$mark.total", 70] },
+                              then: 3.5,
+                            },
+                            {
+                              case: { $gte: ["$$mark.total", 65] },
+                              then: 3.25,
+                            },
+                            {
+                              case: { $gte: ["$$mark.total", 60] },
+                              then: 3.0,
+                            },
+                            {
+                              case: { $gte: ["$$mark.total", 55] },
+                              then: 2.75,
+                            },
+                            {
+                              case: { $gte: ["$$mark.total", 50] },
+                              then: 2.5,
+                            },
+                            {
+                              case: { $gte: ["$$mark.total", 45] },
+                              then: 2.25,
+                            },
+                            {
+                              case: { $gte: ["$$mark.total", 40] },
+                              then: 2.0,
+                            },
+                          ],
+                          default: 0,
+                        },
+                      },
+                    },
+                  },
+                },
+                labMarks: {
+                  $map: {
+                    input: "$labMarks",
+                    as: "lab",
+                    in: {
+                      courseCode: "$$lab.courseCode",
+                      courseCredit: "$$lab.credit",
+                      internalMark: "$$lab.tweentyPercent",
+                      finalMark: "$$lab.eightyPercent",
+                      totalMark: "$$lab.labTotal",
+                      LG: {
+                        $switch: {
+                          branches: [
+                            {
+                              case: { $gte: ["$$lab.labTotal", 80] },
+                              then: "A+",
+                            },
+                            {
+                              case: { $gte: ["$$lab.labTotal", 75] },
+                              then: "A",
+                            },
+                            {
+                              case: { $gte: ["$$lab.labTotal", 70] },
+                              then: "A-",
+                            },
+                            {
+                              case: { $gte: ["$$lab.labTotal", 65] },
+                              then: "B+",
+                            },
+                            {
+                              case: { $gte: ["$$lab.labTotal", 60] },
+                              then: "B",
+                            },
+                            {
+                              case: { $gte: ["$$lab.labTotal", 55] },
+                              then: "B-",
+                            },
+                            {
+                              case: { $gte: ["$$lab.labTotal", 50] },
+                              then: "C+",
+                            },
+                            {
+                              case: { $gte: ["$$lab.labTotal", 45] },
+                              then: "C",
+                            },
+                            {
+                              case: { $gte: ["$$lab.labTotal", 40] },
+                              then: "D",
+                            },
+                          ],
+                          default: "F",
+                        },
+                      },
+                      GP: {
+                        $switch: {
+                          branches: [
+                            {
+                              case: { $gte: ["$$lab.labTotal", 80] },
+                              then: 4.0,
+                            },
+                            {
+                              case: { $gte: ["$$lab.labTotal", 75] },
+                              then: 3.75,
+                            },
+                            {
+                              case: { $gte: ["$$lab.labTotal", 70] },
+                              then: 3.5,
+                            },
+                            {
+                              case: { $gte: ["$$lab.labTotal", 65] },
+                              then: 3.25,
+                            },
+                            {
+                              case: { $gte: ["$$lab.labTotal", 60] },
+                              then: 3.0,
+                            },
+                            {
+                              case: { $gte: ["$$lab.labTotal", 55] },
+                              then: 2.75,
+                            },
+                            {
+                              case: { $gte: ["$$lab.labTotal", 50] },
+                              then: 2.5,
+                            },
+                            {
+                              case: { $gte: ["$$lab.labTotal", 45] },
+                              then: 2.25,
+                            },
+                            {
+                              case: { $gte: ["$$lab.labTotal", 40] },
+                              then: 2.0,
+                            },
+                          ],
+                          default: 0,
+                        },
+                      },
+                    },
+                  },
+                },
+                theoryImproves: {
+                  $map: {
+                    input: "$theoryImproves",
+                    as: "improve",
+                    in: {
+                      courseCode: "$$improve.courseCode",
+                      courseCredit: "$$improve.credit",
+                      internalMark: "$$improve.totalInternal",
+                      finalMark: "$$improve.totalExternal",
+                      totalMark: "$$improve.total",
+                      LG: {
+                        $switch: {
+                          branches: [
+                            {
+                              case: { $gte: ["$$improve.total", 80] },
+                              then: "A+",
+                            },
+                            {
+                              case: { $gte: ["$$improve.total", 75] },
+                              then: "A",
+                            },
+                            {
+                              case: { $gte: ["$$improve.total", 70] },
+                              then: "A-",
+                            },
+                            {
+                              case: { $gte: ["$$improve.total", 65] },
+                              then: "B+",
+                            },
+                            {
+                              case: { $gte: ["$$improve.total", 60] },
+                              then: "B",
+                            },
+                            {
+                              case: { $gte: ["$$improve.total", 55] },
+                              then: "B-",
+                            },
+                            {
+                              case: { $gte: ["$$improve.total", 50] },
+                              then: "C+",
+                            },
+                            {
+                              case: { $gte: ["$$improve.total", 45] },
+                              then: "C",
+                            },
+                            {
+                              case: { $gte: ["$$improve.total", 40] },
+                              then: "D",
+                            },
+                          ],
+                          default: "F",
+                        },
+                      },
+                      GP: {
+                        $switch: {
+                          branches: [
+                            {
+                              case: { $gte: ["$$improve.total", 80] },
+                              then: 4.0,
+                            },
+                            {
+                              case: { $gte: ["$$improve.total", 75] },
+                              then: 3.75,
+                            },
+                            {
+                              case: { $gte: ["$$improve.total", 70] },
+                              then: 3.5,
+                            },
+                            {
+                              case: { $gte: ["$$improve.total", 65] },
+                              then: 3.25,
+                            },
+                            {
+                              case: { $gte: ["$$improve.total", 60] },
+                              then: 3.0,
+                            },
+                            {
+                              case: { $gte: ["$$improve.total", 55] },
+                              then: 2.75,
+                            },
+                            {
+                              case: { $gte: ["$$improve.total", 50] },
+                              then: 2.5,
+                            },
+                            {
+                              case: { $gte: ["$$improve.total", 45] },
+                              then: 2.25,
+                            },
+                            {
+                              case: { $gte: ["$$improve.total", 40] },
+                              then: 2.0,
+                            },
+                          ],
+                          default: 0,
+                        },
+                      },
+                    },
+                  },
+                },
+                labImproves: {
+                  $map: {
+                    input: "$labImproves",
+                    as: "improve",
+                    in: {
+                      courseCode: "$$improve.courseCode",
+                      courseCredit: "$$improve.credit",
+                      internalMark: "$$improve.tweentyPercent",
+                      finalMark: "$$improve.eightyPercent",
+                      totalMark: "$$improve.labTotal",
+                      LG: {
+                        $switch: {
+                          branches: [
+                            {
+                              case: { $gte: ["$$improve.labTotal", 80] },
+                              then: "A+",
+                            },
+                            {
+                              case: { $gte: ["$$improve.labTotal", 75] },
+                              then: "A",
+                            },
+                            {
+                              case: { $gte: ["$$improve.labTotal", 70] },
+                              then: "A-",
+                            },
+                            {
+                              case: { $gte: ["$$improve.labTotal", 65] },
+                              then: "B+",
+                            },
+                            {
+                              case: { $gte: ["$$improve.labTotal", 60] },
+                              then: "B",
+                            },
+                            {
+                              case: { $gte: ["$$improve.labTotal", 55] },
+                              then: "B-",
+                            },
+                            {
+                              case: { $gte: ["$$improve.labTotal", 50] },
+                              then: "C+",
+                            },
+                            {
+                              case: { $gte: ["$$improve.labTotal", 45] },
+                              then: "C",
+                            },
+                            {
+                              case: { $gte: ["$$improve.labTotal", 40] },
+                              then: "D",
+                            },
+                          ],
+                          default: "F",
+                        },
+                      },
+                      GP: {
+                        $switch: {
+                          branches: [
+                            {
+                              case: { $gte: ["$$improve.labTotal", 80] },
+                              then: 4.0,
+                            },
+                            {
+                              case: { $gte: ["$$improve.labTotal", 75] },
+                              then: 3.75,
+                            },
+                            {
+                              case: { $gte: ["$$improve.labTotal", 70] },
+                              then: 3.5,
+                            },
+                            {
+                              case: { $gte: ["$$improve.labTotal", 65] },
+                              then: 3.25,
+                            },
+                            {
+                              case: { $gte: ["$$improve.labTotal", 60] },
+                              then: 3.0,
+                            },
+                            {
+                              case: { $gte: ["$$improve.labTotal", 55] },
+                              then: 2.75,
+                            },
+                            {
+                              case: { $gte: ["$$improve.labTotal", 50] },
+                              then: 2.5,
+                            },
+                            {
+                              case: { $gte: ["$$improve.labTotal", 45] },
+                              then: 2.25,
+                            },
+                            {
+                              case: { $gte: ["$$improve.labTotal", 40] },
+                              then: 2.0,
+                            },
+                          ],
+                          default: 0,
+                        },
+                      },
+                    },
+                  },
+                },
+              },
+            },
+            {
+              $project: {
+                regularMarks: { $concatArrays: ["$courseMarks", "$labMarks"] },
+                improveMarks: {
+                  $concatArrays: ["$theoryImproves", "$labImproves"],
+                },
+              },
+            },
+            {
+              $project: {
+                marksWithImprove: {
+                  $map: {
+                    input: "$regularMarks",
+                    as: "regularMark",
+                    in: {
+                      courseCode: "$$regularMark.courseCode",
+                      courseCredit: "$$regularMark.courseCredit",
+                      fullMarks: 100,
+                      regular: {
+                        internalMark: "$$regularMark.internalMark",
+                        finalMark: "$$regularMark.finalMark",
+                        totalMark: "$$regularMark.totalMark",
+                        LG: "$$regularMark.LG",
+                        GP: "$$regularMark.GP",
+                      },
+                      improve: {
+                        $cond: {
+                          if: {
+                            $gt: [
+                              {
+                                $size: {
+                                  $filter: {
+                                    input: "$improveMarks",
+                                    as: "improveMark",
+                                    cond: {
+                                      $eq: [
+                                        "$$improveMark.courseCode",
+                                        "$$regularMark.courseCode",
+                                      ],
+                                    },
+                                  },
+                                },
+                              },
+                              0,
+                            ],
+                          },
+                          then: {
+                            $let: {
+                              vars: {
+                                matchingImprove: {
+                                  $arrayElemAt: [
+                                    {
+                                      $filter: {
+                                        input: "$improveMarks",
+                                        as: "improveMark",
+                                        cond: {
+                                          $eq: [
+                                            "$$improveMark.courseCode",
+                                            "$$regularMark.courseCode",
+                                          ],
+                                        },
+                                      },
+                                    },
+                                    0,
+                                  ],
+                                },
+                              },
+                              in: {
+                                finalMark: "$$matchingImprove.finalMark",
+                                totalMark: "$$matchingImprove.totalMark",
+                                LG: "$$matchingImprove.LG",
+                                GP: "$$matchingImprove.GP",
+                              },
+                            },
+                          },
+                          else: {
+                            finalMark: "",
+                            totalMark: "",
+                            LG: "",
+                            GP: "",
+                          },
+                        },
+                      },
+                    },
+                  },
+                },
+              },
+            },
+            {
+              $project: {
+                cgp: {
+                  $reduce: {
+                    input: "$marksWithImprove",
+                    initialValue: 0,
+                    in: {
+                      $cond: {
+                        if: { $ne: ["$$this.improve.GP", ""] },
+                        then: {
+                          $sum: [
+                            "$$value",
+                            {
+                              $multiply: [
+                                "$$this.courseCredit",
+                                "$$this.improve.GP",
+                              ],
+                            },
+                          ],
+                        },
+                        else: {
+                          $sum: [
+                            "$$value",
+                            {
+                              $multiply: [
+                                "$$this.courseCredit",
+                                "$$this.regular.GP",
+                              ],
+                            },
+                          ],
+                        },
+                      },
+                    },
+                  },
+                },
+                tc: {
+                  $reduce: {
+                    input: "$marksWithImprove",
+                    initialValue: 0,
+                    in: {
+                      $sum: ["$$value", "$$this.courseCredit"],
+                    },
+                  },
+                },
+                ec: {
+                  $reduce: {
+                    input: "$marksWithImprove",
+                    initialValue: 0,
+                    in: {
+                      $cond: {
+                        if: { $eq: ["$$this.regular.GP", 0] },
+                        then: { $sum: ["$$value", 0] },
+                        else: { $sum: ["$$value", "$$this.courseCredit"] },
+                      },
+                    },
+                  },
+                },
+              },
+            },
+            {
+              $project: {
+                _id: 0,
+                cgp: 1,
+                ec: 1,
+                tc: 1,
+                cgpa: {
+                  $round: [{ $divide: ["$cgp", "$tc"] }, 2],
+                },
+              },
+            },
+          ],
+          previousYear: [
+            {
+              $match: {
+                department: dept,
+                currentSession: session,
+                semester: { $gte: 1, $lte: prevMaxSemester },
+                roll,
+              },
+            },
+            {
+              $group: {
+                _id: "$roll",
+                courseMarks: { $push: "$$ROOT" },
+              },
+            },
+            {
+              $lookup: {
+                from: "labmarks",
+                localField: "_id",
+                foreignField: "roll",
+                pipeline: [
+                  {
+                    $match: {
+                      department: dept,
+                      currentSession: session,
+                      semester: { $gte: 1, $lte: prevMaxSemester },
+                    },
+                  },
+                ],
+                as: "labMarks",
+              },
+            },
+            {
+              $lookup: {
+                from: "improves",
+                localField: "_id",
+                foreignField: "roll",
+                pipeline: [
+                  {
+                    $match: {
+                      department: dept,
+                      currentSession: session,
+                      semester: { $gte: 1, $lte: prevMaxSemester },
+                    },
+                  },
+                ],
+                as: "theoryImproves",
+              },
+            },
+            {
+              $lookup: {
+                from: "labimproves",
+                localField: "_id",
+                foreignField: "roll",
+                pipeline: [
+                  {
+                    $match: {
+                      department: dept,
+                      currentSession: session,
+                      semester: { $gte: 1, $lte: prevMaxSemester },
+                    },
+                  },
+                ],
+                as: "labImproves",
+              },
+            },
+            {
+              $project: {
+                courseMarks: {
+                  $map: {
+                    input: "$courseMarks",
+                    as: "mark",
+                    in: {
+                      courseCode: "$$mark.courseCode",
+                      courseCredit: "$$mark.credit",
+                      internalMark: "$$mark.totalInternal",
+                      finalMark: "$$mark.totalExternal",
+                      totalMark: "$$mark.total",
+                      LG: {
+                        $switch: {
+                          branches: [
+                            {
+                              case: { $gte: ["$$mark.total", 80] },
+                              then: "A+",
+                            },
+                            {
+                              case: { $gte: ["$$mark.total", 75] },
+                              then: "A",
+                            },
+                            {
+                              case: { $gte: ["$$mark.total", 70] },
+                              then: "A-",
+                            },
+                            {
+                              case: { $gte: ["$$mark.total", 65] },
+                              then: "B+",
+                            },
+                            {
+                              case: { $gte: ["$$mark.total", 60] },
+                              then: "B",
+                            },
+                            {
+                              case: { $gte: ["$$mark.total", 55] },
+                              then: "B-",
+                            },
+                            {
+                              case: { $gte: ["$$mark.total", 50] },
+                              then: "C+",
+                            },
+                            {
+                              case: { $gte: ["$$mark.total", 45] },
+                              then: "C",
+                            },
+                            {
+                              case: { $gte: ["$$mark.total", 40] },
+                              then: "D",
+                            },
+                          ],
+                          default: "F",
+                        },
+                      },
+                      GP: {
+                        $switch: {
+                          branches: [
+                            {
+                              case: { $gte: ["$$mark.total", 80] },
+                              then: 4.0,
+                            },
+                            {
+                              case: { $gte: ["$$mark.total", 75] },
+                              then: 3.75,
+                            },
+                            {
+                              case: { $gte: ["$$mark.total", 70] },
+                              then: 3.5,
+                            },
+                            {
+                              case: { $gte: ["$$mark.total", 65] },
+                              then: 3.25,
+                            },
+                            {
+                              case: { $gte: ["$$mark.total", 60] },
+                              then: 3.0,
+                            },
+                            {
+                              case: { $gte: ["$$mark.total", 55] },
+                              then: 2.75,
+                            },
+                            {
+                              case: { $gte: ["$$mark.total", 50] },
+                              then: 2.5,
+                            },
+                            {
+                              case: { $gte: ["$$mark.total", 45] },
+                              then: 2.25,
+                            },
+                            {
+                              case: { $gte: ["$$mark.total", 40] },
+                              then: 2.0,
+                            },
+                          ],
+                          default: 0,
+                        },
+                      },
+                    },
+                  },
+                },
+                labMarks: {
+                  $map: {
+                    input: "$labMarks",
+                    as: "lab",
+                    in: {
+                      courseCode: "$$lab.courseCode",
+                      courseCredit: "$$lab.credit",
+                      internalMark: "$$lab.tweentyPercent",
+                      finalMark: "$$lab.eightyPercent",
+                      totalMark: "$$lab.labTotal",
+                      LG: {
+                        $switch: {
+                          branches: [
+                            {
+                              case: { $gte: ["$$lab.labTotal", 80] },
+                              then: "A+",
+                            },
+                            {
+                              case: { $gte: ["$$lab.labTotal", 75] },
+                              then: "A",
+                            },
+                            {
+                              case: { $gte: ["$$lab.labTotal", 70] },
+                              then: "A-",
+                            },
+                            {
+                              case: { $gte: ["$$lab.labTotal", 65] },
+                              then: "B+",
+                            },
+                            {
+                              case: { $gte: ["$$lab.labTotal", 60] },
+                              then: "B",
+                            },
+                            {
+                              case: { $gte: ["$$lab.labTotal", 55] },
+                              then: "B-",
+                            },
+                            {
+                              case: { $gte: ["$$lab.labTotal", 50] },
+                              then: "C+",
+                            },
+                            {
+                              case: { $gte: ["$$lab.labTotal", 45] },
+                              then: "C",
+                            },
+                            {
+                              case: { $gte: ["$$lab.labTotal", 40] },
+                              then: "D",
+                            },
+                          ],
+                          default: "F",
+                        },
+                      },
+                      GP: {
+                        $switch: {
+                          branches: [
+                            {
+                              case: { $gte: ["$$lab.labTotal", 80] },
+                              then: 4.0,
+                            },
+                            {
+                              case: { $gte: ["$$lab.labTotal", 75] },
+                              then: 3.75,
+                            },
+                            {
+                              case: { $gte: ["$$lab.labTotal", 70] },
+                              then: 3.5,
+                            },
+                            {
+                              case: { $gte: ["$$lab.labTotal", 65] },
+                              then: 3.25,
+                            },
+                            {
+                              case: { $gte: ["$$lab.labTotal", 60] },
+                              then: 3.0,
+                            },
+                            {
+                              case: { $gte: ["$$lab.labTotal", 55] },
+                              then: 2.75,
+                            },
+                            {
+                              case: { $gte: ["$$lab.labTotal", 50] },
+                              then: 2.5,
+                            },
+                            {
+                              case: { $gte: ["$$lab.labTotal", 45] },
+                              then: 2.25,
+                            },
+                            {
+                              case: { $gte: ["$$lab.labTotal", 40] },
+                              then: 2.0,
+                            },
+                          ],
+                          default: 0,
+                        },
+                      },
+                    },
+                  },
+                },
+                theoryImproves: {
+                  $map: {
+                    input: "$theoryImproves",
+                    as: "improve",
+                    in: {
+                      courseCode: "$$improve.courseCode",
+                      courseCredit: "$$improve.credit",
+                      internalMark: "$$improve.totalInternal",
+                      finalMark: "$$improve.totalExternal",
+                      totalMark: "$$improve.total",
+                      LG: {
+                        $switch: {
+                          branches: [
+                            {
+                              case: { $gte: ["$$improve.total", 80] },
+                              then: "A+",
+                            },
+                            {
+                              case: { $gte: ["$$improve.total", 75] },
+                              then: "A",
+                            },
+                            {
+                              case: { $gte: ["$$improve.total", 70] },
+                              then: "A-",
+                            },
+                            {
+                              case: { $gte: ["$$improve.total", 65] },
+                              then: "B+",
+                            },
+                            {
+                              case: { $gte: ["$$improve.total", 60] },
+                              then: "B",
+                            },
+                            {
+                              case: { $gte: ["$$improve.total", 55] },
+                              then: "B-",
+                            },
+                            {
+                              case: { $gte: ["$$improve.total", 50] },
+                              then: "C+",
+                            },
+                            {
+                              case: { $gte: ["$$improve.total", 45] },
+                              then: "C",
+                            },
+                            {
+                              case: { $gte: ["$$improve.total", 40] },
+                              then: "D",
+                            },
+                          ],
+                          default: "F",
+                        },
+                      },
+                      GP: {
+                        $switch: {
+                          branches: [
+                            {
+                              case: { $gte: ["$$improve.total", 80] },
+                              then: 4.0,
+                            },
+                            {
+                              case: { $gte: ["$$improve.total", 75] },
+                              then: 3.75,
+                            },
+                            {
+                              case: { $gte: ["$$improve.total", 70] },
+                              then: 3.5,
+                            },
+                            {
+                              case: { $gte: ["$$improve.total", 65] },
+                              then: 3.25,
+                            },
+                            {
+                              case: { $gte: ["$$improve.total", 60] },
+                              then: 3.0,
+                            },
+                            {
+                              case: { $gte: ["$$improve.total", 55] },
+                              then: 2.75,
+                            },
+                            {
+                              case: { $gte: ["$$improve.total", 50] },
+                              then: 2.5,
+                            },
+                            {
+                              case: { $gte: ["$$improve.total", 45] },
+                              then: 2.25,
+                            },
+                            {
+                              case: { $gte: ["$$improve.total", 40] },
+                              then: 2.0,
+                            },
+                          ],
+                          default: 0,
+                        },
+                      },
+                    },
+                  },
+                },
+                labImproves: {
+                  $map: {
+                    input: "$labImproves",
+                    as: "improve",
+                    in: {
+                      courseCode: "$$improve.courseCode",
+                      courseCredit: "$$improve.credit",
+                      internalMark: "$$improve.tweentyPercent",
+                      finalMark: "$$improve.eightyPercent",
+                      totalMark: "$$improve.labTotal",
+                      LG: {
+                        $switch: {
+                          branches: [
+                            {
+                              case: { $gte: ["$$improve.labTotal", 80] },
+                              then: "A+",
+                            },
+                            {
+                              case: { $gte: ["$$improve.labTotal", 75] },
+                              then: "A",
+                            },
+                            {
+                              case: { $gte: ["$$improve.labTotal", 70] },
+                              then: "A-",
+                            },
+                            {
+                              case: { $gte: ["$$improve.labTotal", 65] },
+                              then: "B+",
+                            },
+                            {
+                              case: { $gte: ["$$improve.labTotal", 60] },
+                              then: "B",
+                            },
+                            {
+                              case: { $gte: ["$$improve.labTotal", 55] },
+                              then: "B-",
+                            },
+                            {
+                              case: { $gte: ["$$improve.labTotal", 50] },
+                              then: "C+",
+                            },
+                            {
+                              case: { $gte: ["$$improve.labTotal", 45] },
+                              then: "C",
+                            },
+                            {
+                              case: { $gte: ["$$improve.labTotal", 40] },
+                              then: "D",
+                            },
+                          ],
+                          default: "F",
+                        },
+                      },
+                      GP: {
+                        $switch: {
+                          branches: [
+                            {
+                              case: { $gte: ["$$improve.labTotal", 80] },
+                              then: 4.0,
+                            },
+                            {
+                              case: { $gte: ["$$improve.labTotal", 75] },
+                              then: 3.75,
+                            },
+                            {
+                              case: { $gte: ["$$improve.labTotal", 70] },
+                              then: 3.5,
+                            },
+                            {
+                              case: { $gte: ["$$improve.labTotal", 65] },
+                              then: 3.25,
+                            },
+                            {
+                              case: { $gte: ["$$improve.labTotal", 60] },
+                              then: 3.0,
+                            },
+                            {
+                              case: { $gte: ["$$improve.labTotal", 55] },
+                              then: 2.75,
+                            },
+                            {
+                              case: { $gte: ["$$improve.labTotal", 50] },
+                              then: 2.5,
+                            },
+                            {
+                              case: { $gte: ["$$improve.labTotal", 45] },
+                              then: 2.25,
+                            },
+                            {
+                              case: { $gte: ["$$improve.labTotal", 40] },
+                              then: 2.0,
+                            },
+                          ],
+                          default: 0,
+                        },
+                      },
+                    },
+                  },
+                },
+              },
+            },
+            {
+              $project: {
+                regularMarks: { $concatArrays: ["$courseMarks", "$labMarks"] },
+                improveMarks: {
+                  $concatArrays: ["$theoryImproves", "$labImproves"],
+                },
+              },
+            },
+            {
+              $project: {
+                marksWithImprove: {
+                  $map: {
+                    input: "$regularMarks",
+                    as: "regularMark",
+                    in: {
+                      courseCode: "$$regularMark.courseCode",
+                      courseCredit: "$$regularMark.courseCredit",
+                      fullMarks: 100,
+                      regular: {
+                        internalMark: "$$regularMark.internalMark",
+                        finalMark: "$$regularMark.finalMark",
+                        totalMark: "$$regularMark.totalMark",
+                        LG: "$$regularMark.LG",
+                        GP: "$$regularMark.GP",
+                      },
+                      improve: {
+                        $cond: {
+                          if: {
+                            $gt: [
+                              {
+                                $size: {
+                                  $filter: {
+                                    input: "$improveMarks",
+                                    as: "improveMark",
+                                    cond: {
+                                      $eq: [
+                                        "$$improveMark.courseCode",
+                                        "$$regularMark.courseCode",
+                                      ],
+                                    },
+                                  },
+                                },
+                              },
+                              0,
+                            ],
+                          },
+                          then: {
+                            $let: {
+                              vars: {
+                                matchingImprove: {
+                                  $arrayElemAt: [
+                                    {
+                                      $filter: {
+                                        input: "$improveMarks",
+                                        as: "improveMark",
+                                        cond: {
+                                          $eq: [
+                                            "$$improveMark.courseCode",
+                                            "$$regularMark.courseCode",
+                                          ],
+                                        },
+                                      },
+                                    },
+                                    0,
+                                  ],
+                                },
+                              },
+                              in: {
+                                finalMark: "$$matchingImprove.finalMark",
+                                totalMark: "$$matchingImprove.totalMark",
+                                LG: "$$matchingImprove.LG",
+                                GP: "$$matchingImprove.GP",
+                              },
+                            },
+                          },
+                          else: {
+                            finalMark: "",
+                            totalMark: "",
+                            LG: "",
+                            GP: "",
+                          },
+                        },
+                      },
+                    },
+                  },
+                },
+              },
+            },
+            {
+              $project: {
+                cgp: {
+                  $reduce: {
+                    input: "$marksWithImprove",
+                    initialValue: 0,
+                    in: {
+                      $cond: {
+                        if: { $ne: ["$$this.improve.GP", ""] },
+                        then: {
+                          $sum: [
+                            "$$value",
+                            {
+                              $multiply: [
+                                "$$this.courseCredit",
+                                "$$this.improve.GP",
+                              ],
+                            },
+                          ],
+                        },
+                        else: {
+                          $sum: [
+                            "$$value",
+                            {
+                              $multiply: [
+                                "$$this.courseCredit",
+                                "$$this.regular.GP",
+                              ],
+                            },
+                          ],
+                        },
+                      },
+                    },
+                  },
+                },
+                tc: {
+                  $reduce: {
+                    input: "$marksWithImprove",
+                    initialValue: 0,
+                    in: {
+                      $sum: ["$$value", "$$this.courseCredit"],
+                    },
+                  },
+                },
+                ec: {
+                  $reduce: {
+                    input: "$marksWithImprove",
+                    initialValue: 0,
+                    in: {
+                      $cond: {
+                        if: { $eq: ["$$this.regular.GP", 0] },
+                        then: { $sum: ["$$value", 0] },
+                        else: { $sum: ["$$value", "$$this.courseCredit"] },
+                      },
+                    },
+                  },
+                },
+              },
+            },
+            {
+              $project: {
+                _id: 0,
+                cgp: 1,
+                ec: 1,
+                tc: 1,
+                cgpa: {
+                  $round: [{ $divide: ["$cgp", "$tc"] }, 2],
+                },
+              },
+            },
+          ],
+          uptoThisYear: [
+            {
+              $match: {
+                department: dept,
+                currentSession: session,
+                semester: { $gte: 1, $lte: secondSemester },
+                roll,
+              },
+            },
+            {
+              $group: {
+                _id: "$roll",
+                courseMarks: { $push: "$$ROOT" },
+              },
+            },
+            {
+              $lookup: {
+                from: "labmarks",
+                localField: "_id",
+                foreignField: "roll",
+                pipeline: [
+                  {
+                    $match: {
+                      department: dept,
+                      currentSession: session,
+                      semester: { $gte: 1, $lte: secondSemester },
+                    },
+                  },
+                ],
+                as: "labMarks",
+              },
+            },
+            {
+              $lookup: {
+                from: "improves",
+                localField: "_id",
+                foreignField: "roll",
+                pipeline: [
+                  {
+                    $match: {
+                      department: dept,
+                      currentSession: session,
+                      semester: { $gte: 1, $lte: secondSemester },
+                    },
+                  },
+                ],
+                as: "theoryImproves",
+              },
+            },
+            {
+              $lookup: {
+                from: "labimproves",
+                localField: "_id",
+                foreignField: "roll",
+                pipeline: [
+                  {
+                    $match: {
+                      department: dept,
+                      currentSession: session,
+                      semester: { $gte: 1, $lte: secondSemester },
+                    },
+                  },
+                ],
+                as: "labImproves",
+              },
+            },
+            {
+              $project: {
+                courseMarks: {
+                  $map: {
+                    input: "$courseMarks",
+                    as: "mark",
+                    in: {
+                      courseCode: "$$mark.courseCode",
+                      courseCredit: "$$mark.credit",
+                      internalMark: "$$mark.totalInternal",
+                      finalMark: "$$mark.totalExternal",
+                      totalMark: "$$mark.total",
+                      LG: {
+                        $switch: {
+                          branches: [
+                            {
+                              case: { $gte: ["$$mark.total", 80] },
+                              then: "A+",
+                            },
+                            {
+                              case: { $gte: ["$$mark.total", 75] },
+                              then: "A",
+                            },
+                            {
+                              case: { $gte: ["$$mark.total", 70] },
+                              then: "A-",
+                            },
+                            {
+                              case: { $gte: ["$$mark.total", 65] },
+                              then: "B+",
+                            },
+                            {
+                              case: { $gte: ["$$mark.total", 60] },
+                              then: "B",
+                            },
+                            {
+                              case: { $gte: ["$$mark.total", 55] },
+                              then: "B-",
+                            },
+                            {
+                              case: { $gte: ["$$mark.total", 50] },
+                              then: "C+",
+                            },
+                            {
+                              case: { $gte: ["$$mark.total", 45] },
+                              then: "C",
+                            },
+                            {
+                              case: { $gte: ["$$mark.total", 40] },
+                              then: "D",
+                            },
+                          ],
+                          default: "F",
+                        },
+                      },
+                      GP: {
+                        $switch: {
+                          branches: [
+                            {
+                              case: { $gte: ["$$mark.total", 80] },
+                              then: 4.0,
+                            },
+                            {
+                              case: { $gte: ["$$mark.total", 75] },
+                              then: 3.75,
+                            },
+                            {
+                              case: { $gte: ["$$mark.total", 70] },
+                              then: 3.5,
+                            },
+                            {
+                              case: { $gte: ["$$mark.total", 65] },
+                              then: 3.25,
+                            },
+                            {
+                              case: { $gte: ["$$mark.total", 60] },
+                              then: 3.0,
+                            },
+                            {
+                              case: { $gte: ["$$mark.total", 55] },
+                              then: 2.75,
+                            },
+                            {
+                              case: { $gte: ["$$mark.total", 50] },
+                              then: 2.5,
+                            },
+                            {
+                              case: { $gte: ["$$mark.total", 45] },
+                              then: 2.25,
+                            },
+                            {
+                              case: { $gte: ["$$mark.total", 40] },
+                              then: 2.0,
+                            },
+                          ],
+                          default: 0,
+                        },
+                      },
+                    },
+                  },
+                },
+                labMarks: {
+                  $map: {
+                    input: "$labMarks",
+                    as: "lab",
+                    in: {
+                      courseCode: "$$lab.courseCode",
+                      courseCredit: "$$lab.credit",
+                      internalMark: "$$lab.tweentyPercent",
+                      finalMark: "$$lab.eightyPercent",
+                      totalMark: "$$lab.labTotal",
+                      LG: {
+                        $switch: {
+                          branches: [
+                            {
+                              case: { $gte: ["$$lab.labTotal", 80] },
+                              then: "A+",
+                            },
+                            {
+                              case: { $gte: ["$$lab.labTotal", 75] },
+                              then: "A",
+                            },
+                            {
+                              case: { $gte: ["$$lab.labTotal", 70] },
+                              then: "A-",
+                            },
+                            {
+                              case: { $gte: ["$$lab.labTotal", 65] },
+                              then: "B+",
+                            },
+                            {
+                              case: { $gte: ["$$lab.labTotal", 60] },
+                              then: "B",
+                            },
+                            {
+                              case: { $gte: ["$$lab.labTotal", 55] },
+                              then: "B-",
+                            },
+                            {
+                              case: { $gte: ["$$lab.labTotal", 50] },
+                              then: "C+",
+                            },
+                            {
+                              case: { $gte: ["$$lab.labTotal", 45] },
+                              then: "C",
+                            },
+                            {
+                              case: { $gte: ["$$lab.labTotal", 40] },
+                              then: "D",
+                            },
+                          ],
+                          default: "F",
+                        },
+                      },
+                      GP: {
+                        $switch: {
+                          branches: [
+                            {
+                              case: { $gte: ["$$lab.labTotal", 80] },
+                              then: 4.0,
+                            },
+                            {
+                              case: { $gte: ["$$lab.labTotal", 75] },
+                              then: 3.75,
+                            },
+                            {
+                              case: { $gte: ["$$lab.labTotal", 70] },
+                              then: 3.5,
+                            },
+                            {
+                              case: { $gte: ["$$lab.labTotal", 65] },
+                              then: 3.25,
+                            },
+                            {
+                              case: { $gte: ["$$lab.labTotal", 60] },
+                              then: 3.0,
+                            },
+                            {
+                              case: { $gte: ["$$lab.labTotal", 55] },
+                              then: 2.75,
+                            },
+                            {
+                              case: { $gte: ["$$lab.labTotal", 50] },
+                              then: 2.5,
+                            },
+                            {
+                              case: { $gte: ["$$lab.labTotal", 45] },
+                              then: 2.25,
+                            },
+                            {
+                              case: { $gte: ["$$lab.labTotal", 40] },
+                              then: 2.0,
+                            },
+                          ],
+                          default: 0,
+                        },
+                      },
+                    },
+                  },
+                },
+                theoryImproves: {
+                  $map: {
+                    input: "$theoryImproves",
+                    as: "improve",
+                    in: {
+                      courseCode: "$$improve.courseCode",
+                      courseCredit: "$$improve.credit",
+                      internalMark: "$$improve.totalInternal",
+                      finalMark: "$$improve.totalExternal",
+                      totalMark: "$$improve.total",
+                      LG: {
+                        $switch: {
+                          branches: [
+                            {
+                              case: { $gte: ["$$improve.total", 80] },
+                              then: "A+",
+                            },
+                            {
+                              case: { $gte: ["$$improve.total", 75] },
+                              then: "A",
+                            },
+                            {
+                              case: { $gte: ["$$improve.total", 70] },
+                              then: "A-",
+                            },
+                            {
+                              case: { $gte: ["$$improve.total", 65] },
+                              then: "B+",
+                            },
+                            {
+                              case: { $gte: ["$$improve.total", 60] },
+                              then: "B",
+                            },
+                            {
+                              case: { $gte: ["$$improve.total", 55] },
+                              then: "B-",
+                            },
+                            {
+                              case: { $gte: ["$$improve.total", 50] },
+                              then: "C+",
+                            },
+                            {
+                              case: { $gte: ["$$improve.total", 45] },
+                              then: "C",
+                            },
+                            {
+                              case: { $gte: ["$$improve.total", 40] },
+                              then: "D",
+                            },
+                          ],
+                          default: "F",
+                        },
+                      },
+                      GP: {
+                        $switch: {
+                          branches: [
+                            {
+                              case: { $gte: ["$$improve.total", 80] },
+                              then: 4.0,
+                            },
+                            {
+                              case: { $gte: ["$$improve.total", 75] },
+                              then: 3.75,
+                            },
+                            {
+                              case: { $gte: ["$$improve.total", 70] },
+                              then: 3.5,
+                            },
+                            {
+                              case: { $gte: ["$$improve.total", 65] },
+                              then: 3.25,
+                            },
+                            {
+                              case: { $gte: ["$$improve.total", 60] },
+                              then: 3.0,
+                            },
+                            {
+                              case: { $gte: ["$$improve.total", 55] },
+                              then: 2.75,
+                            },
+                            {
+                              case: { $gte: ["$$improve.total", 50] },
+                              then: 2.5,
+                            },
+                            {
+                              case: { $gte: ["$$improve.total", 45] },
+                              then: 2.25,
+                            },
+                            {
+                              case: { $gte: ["$$improve.total", 40] },
+                              then: 2.0,
+                            },
+                          ],
+                          default: 0,
+                        },
+                      },
+                    },
+                  },
+                },
+                labImproves: {
+                  $map: {
+                    input: "$labImproves",
+                    as: "improve",
+                    in: {
+                      courseCode: "$$improve.courseCode",
+                      courseCredit: "$$improve.credit",
+                      internalMark: "$$improve.tweentyPercent",
+                      finalMark: "$$improve.eightyPercent",
+                      totalMark: "$$improve.labTotal",
+                      LG: {
+                        $switch: {
+                          branches: [
+                            {
+                              case: { $gte: ["$$improve.labTotal", 80] },
+                              then: "A+",
+                            },
+                            {
+                              case: { $gte: ["$$improve.labTotal", 75] },
+                              then: "A",
+                            },
+                            {
+                              case: { $gte: ["$$improve.labTotal", 70] },
+                              then: "A-",
+                            },
+                            {
+                              case: { $gte: ["$$improve.labTotal", 65] },
+                              then: "B+",
+                            },
+                            {
+                              case: { $gte: ["$$improve.labTotal", 60] },
+                              then: "B",
+                            },
+                            {
+                              case: { $gte: ["$$improve.labTotal", 55] },
+                              then: "B-",
+                            },
+                            {
+                              case: { $gte: ["$$improve.labTotal", 50] },
+                              then: "C+",
+                            },
+                            {
+                              case: { $gte: ["$$improve.labTotal", 45] },
+                              then: "C",
+                            },
+                            {
+                              case: { $gte: ["$$improve.labTotal", 40] },
+                              then: "D",
+                            },
+                          ],
+                          default: "F",
+                        },
+                      },
+                      GP: {
+                        $switch: {
+                          branches: [
+                            {
+                              case: { $gte: ["$$improve.labTotal", 80] },
+                              then: 4.0,
+                            },
+                            {
+                              case: { $gte: ["$$improve.labTotal", 75] },
+                              then: 3.75,
+                            },
+                            {
+                              case: { $gte: ["$$improve.labTotal", 70] },
+                              then: 3.5,
+                            },
+                            {
+                              case: { $gte: ["$$improve.labTotal", 65] },
+                              then: 3.25,
+                            },
+                            {
+                              case: { $gte: ["$$improve.labTotal", 60] },
+                              then: 3.0,
+                            },
+                            {
+                              case: { $gte: ["$$improve.labTotal", 55] },
+                              then: 2.75,
+                            },
+                            {
+                              case: { $gte: ["$$improve.labTotal", 50] },
+                              then: 2.5,
+                            },
+                            {
+                              case: { $gte: ["$$improve.labTotal", 45] },
+                              then: 2.25,
+                            },
+                            {
+                              case: { $gte: ["$$improve.labTotal", 40] },
+                              then: 2.0,
+                            },
+                          ],
+                          default: 0,
+                        },
+                      },
+                    },
+                  },
+                },
+              },
+            },
+            {
+              $project: {
+                regularMarks: { $concatArrays: ["$courseMarks", "$labMarks"] },
+                improveMarks: {
+                  $concatArrays: ["$theoryImproves", "$labImproves"],
+                },
+              },
+            },
+            {
+              $project: {
+                marksWithImprove: {
+                  $map: {
+                    input: "$regularMarks",
+                    as: "regularMark",
+                    in: {
+                      courseCode: "$$regularMark.courseCode",
+                      courseCredit: "$$regularMark.courseCredit",
+                      fullMarks: 100,
+                      regular: {
+                        internalMark: "$$regularMark.internalMark",
+                        finalMark: "$$regularMark.finalMark",
+                        totalMark: "$$regularMark.totalMark",
+                        LG: "$$regularMark.LG",
+                        GP: "$$regularMark.GP",
+                      },
+                      improve: {
+                        $cond: {
+                          if: {
+                            $gt: [
+                              {
+                                $size: {
+                                  $filter: {
+                                    input: "$improveMarks",
+                                    as: "improveMark",
+                                    cond: {
+                                      $eq: [
+                                        "$$improveMark.courseCode",
+                                        "$$regularMark.courseCode",
+                                      ],
+                                    },
+                                  },
+                                },
+                              },
+                              0,
+                            ],
+                          },
+                          then: {
+                            $let: {
+                              vars: {
+                                matchingImprove: {
+                                  $arrayElemAt: [
+                                    {
+                                      $filter: {
+                                        input: "$improveMarks",
+                                        as: "improveMark",
+                                        cond: {
+                                          $eq: [
+                                            "$$improveMark.courseCode",
+                                            "$$regularMark.courseCode",
+                                          ],
+                                        },
+                                      },
+                                    },
+                                    0,
+                                  ],
+                                },
+                              },
+                              in: {
+                                finalMark: "$$matchingImprove.finalMark",
+                                totalMark: "$$matchingImprove.totalMark",
+                                LG: "$$matchingImprove.LG",
+                                GP: "$$matchingImprove.GP",
+                              },
+                            },
+                          },
+                          else: {
+                            finalMark: "",
+                            totalMark: "",
+                            LG: "",
+                            GP: "",
+                          },
+                        },
+                      },
+                    },
+                  },
+                },
+              },
+            },
+            {
+              $project: {
+                cgp: {
+                  $reduce: {
+                    input: "$marksWithImprove",
+                    initialValue: 0,
+                    in: {
+                      $cond: {
+                        if: { $ne: ["$$this.improve.GP", ""] },
+                        then: {
+                          $sum: [
+                            "$$value",
+                            {
+                              $multiply: [
+                                "$$this.courseCredit",
+                                "$$this.improve.GP",
+                              ],
+                            },
+                          ],
+                        },
+                        else: {
+                          $sum: [
+                            "$$value",
+                            {
+                              $multiply: [
+                                "$$this.courseCredit",
+                                "$$this.regular.GP",
+                              ],
+                            },
+                          ],
+                        },
+                      },
+                    },
+                  },
+                },
+                tc: {
+                  $reduce: {
+                    input: "$marksWithImprove",
+                    initialValue: 0,
+                    in: {
+                      $sum: ["$$value", "$$this.courseCredit"],
+                    },
+                  },
+                },
+                ec: {
+                  $reduce: {
+                    input: "$marksWithImprove",
+                    initialValue: 0,
+                    in: {
+                      $cond: {
+                        if: { $eq: ["$$this.regular.GP", 0] },
+                        then: { $sum: ["$$value", 0] },
+                        else: { $sum: ["$$value", "$$this.courseCredit"] },
+                      },
+                    },
+                  },
+                },
+              },
+            },
+            {
+              $project: {
+                _id: 0,
+                cgp: 1,
+                ec: 1,
+                tc: 1,
+                cgpa: {
+                  $round: [{ $divide: ["$cgp", "$tc"] }, 2],
+                },
+              },
+            },
+          ],
+        },
+      },
+      {
+        $unwind: "$thisYear",
+      },
+      {
+        $unwind: "$previousYear",
+      },
+      {
+        $unwind: "$uptoThisYear",
+      },
+    ]);
+
+    const marks = {
+      firstSemester:
+        courseMarks[0]._id < courseMarks[1]._id
+          ? courseMarks[0].marksWithImprove
+          : courseMarks[1].marksWithImprove,
+      secondSemester:
+        courseMarks[0]._id > courseMarks[1]._id
+          ? courseMarks[0].marksWithImprove
+          : courseMarks[1].marksWithImprove,
+    };
+
+    res.status(200).json({
+      yearTabulation: {
+        marks: marks,
+        regularPoints: regularPoints[0],
+        improvePoints: improvePoints[0]
+      },
+    });
+  } catch (err) {
+    next(createError(err.message));
+  }
+};
+
 module.exports = {
   getTabulation,
   getCourseTabulation,
   getImproveMarkTabulation,
   getSemesterTranscript,
+  getTabulationSheetPerYear,
 };

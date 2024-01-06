@@ -7,11 +7,17 @@ const {
   getCourseTabulation,
   getImproveMarkTabulation,
   getSemesterTranscript,
+  getTabulationSheetPerYear,
 } = require("../controllers/resultController");
 
 const router = express.Router();
 
 router.get("/semester-transcript/:dept/:session/:roll", getSemesterTranscript);
+
+router.get(
+  "/tabulation-sheet-per-year/:year/:dept/:session/:roll",
+  getTabulationSheetPerYear
+);
 
 router.get("/:dept/:session/:semester", getTabulation);
 

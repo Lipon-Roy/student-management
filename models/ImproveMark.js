@@ -28,6 +28,18 @@ const improveMarkSchema = mongoose.Schema({
     type: String,
     required: true,
   },
+  totalInternal: {
+    type: Number,
+    required: true,
+  },
+  totalExternal: {
+    type: Number,
+    required: true,
+  },
+  total: {
+    type: Number,
+    required: true,
+  },
   firstExaminer: {
     type: Number,
     min: 0,

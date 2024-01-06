@@ -6,11 +6,19 @@ const createError = require("http-errors");
 const Mark = require("../models/Mark");
 const LabMark = require("../models/LabMark");
 const ImproveMark = require("../models/ImproveMark");
+const LabImprove = require("../models/LabImproveMark");
 
 // get all marks
 const getAllMarks = async (req, res, next) => {
   try {
-    const marks = await Mark.find();
+    const { dept, session, semester, courseName, courseCode } = req.params;
+    const marks = await Mark.find({
+      department: dept,
+      currentSession: session,
+      semester: Number(semester),
+      courseName,
+      courseCode,
+    });
     res.status(200).json({
       result: marks,
     });
@@ -21,12 +29,13 @@ const getAllMarks = async (req, res, next) => {
 
 // get internal mark for single student
 const getSingleMark = async (req, res, next) => {
-  const { dept, semester, courseName, courseCode, roll } = req.params;
+  const { dept, semester, session, courseName, courseCode, roll } = req.params;
 
   try {
     const mark = await Mark.findOne({
       department: dept,
-      semester,
+      currentSession: session,
+      semester: Number(semester),
       courseName,
       courseCode,
       roll,
@@ -119,6 +128,7 @@ const addSingleInternalMark = async (req, res, next) => {
     const {
       department,
       semester,
+      currentSession,
       roll,
       courseName,
       courseCode,
@@ -126,10 +136,11 @@ const addSingleInternalMark = async (req, res, next) => {
       midTwo,
       attendance,
       presentationOrAssignment,
-      currentSession,
     } = req.body;
 
-    // 64e384d6b12e86454d8d2ce4
+    const totalInternal =
+      midOne + midTwo + attendance + presentationOrAssignment;
+
     await Mark.updateOne(
       {
         department: department,
@@ -141,10 +152,11 @@ const addSingleInternalMark = async (req, res, next) => {
       },
       {
         $set: {
-          midOne: Number(midOne),
-          midTwo: Number(midTwo),
-          attendance: Number(attendance),
-          presentationOrAssignment: Number(presentationOrAssignment),
+          midOne,
+          midTwo,
+          attendance,
+          presentationOrAssignment,
+          totalInternal,
           credit: 3,
         },
       },
@@ -182,6 +194,9 @@ const addMultipleInternalMark = async (req, res, next) => {
         currentSession,
       } = m;
 
+      const totalInternal =
+        midOne + midTwo + attendance + presentationOrAssignment;
+
       let updateDoc = {
         updateOne: {
           filter: {
@@ -193,10 +208,11 @@ const addMultipleInternalMark = async (req, res, next) => {
             currentSession,
           },
           update: {
-            midOne: Number(midOne),
-            midTwo: Number(midTwo),
-            attendance: Number(attendance),
-            presentationOrAssignment: Number(presentationOrAssignment),
+            midOne,
+            midTwo,
+            attendance,
+            presentationOrAssignment,
+            totalInternal,
             credit: 3,
           },
           upsert: true,
@@ -233,13 +249,10 @@ const addSingleExternalMark = async (req, res, next) => {
       secondExaminer,
       currentSession,
     } = req.body;
-    let total, forty, sixty;
 
-    semester = Number(semester);
-    firstExaminer = Number(firstExaminer);
-    secondExaminer = Number(secondExaminer);
+    let total, sixty;
 
-    // get internal marks and set total
+    // get internal mark and set total
     const result = await Mark.findOne({
       department,
       semester,
@@ -249,14 +262,14 @@ const addSingleExternalMark = async (req, res, next) => {
       currentSession,
     });
 
-    if (result && result._id) {
-      const { midOne, midTwo, attendance, presentationOrAssignment } = result;
+    if (!result) {
+      throw `Mark was not found for id ${roll}`;
+    }
 
-      forty = midOne + midTwo + attendance + presentationOrAssignment;
-    } else throw `Mark was not found for id ${roll}`;
-
+    const { totalInternal } = result;
     sixty = (firstExaminer + secondExaminer) / 2;
-    total = forty + Number(sixty.toFixed(2));
+    const totalExternal = Number(sixty.toFixed(2));
+    total = totalInternal + totalExternal;
 
     await Mark.updateOne(
       {
@@ -271,7 +284,7 @@ const addSingleExternalMark = async (req, res, next) => {
         $set: {
           firstExaminer,
           secondExaminer,
-          minimum,
+          totalExternal,
           total,
           isThirdExaminer: Math.abs(firstExaminer - secondExaminer) > 12,
         },
@@ -301,11 +314,7 @@ const addMultipleExternalMark = async (req, res, next) => {
     const bulk = [];
     for (let m of marks) {
       let { firstExaminer, secondExaminer, semester } = m;
-      let total, forty, sixty;
-
-      semester = Number(semester);
-      firstExaminer = Number(firstExaminer);
-      secondExaminer = Number(secondExaminer);
+      let total, sixty;
 
       // get internal marks and set total
       const result = await Mark.findOne({
@@ -317,14 +326,14 @@ const addMultipleExternalMark = async (req, res, next) => {
         currentSession: m.currentSession,
       });
 
-      if (result && result._id) {
-        const { midOne, midTwo, attendance, presentationOrAssignment } = result;
+      if (!result) {
+        throw `Mark was not found for id ${m.roll}`;
+      }
 
-        forty = midOne + midTwo + attendance + presentationOrAssignment;
-      } else throw `Mark was not found for id ${m.roll}`;
-
+      const { totalInternal } = result;
       sixty = (firstExaminer + secondExaminer) / 2;
-      total = forty + Number(sixty.toFixed(2));
+      totalExternal = Number(sixty.toFixed(2));
+      total = totalInternal + totalExternal;
 
       let updateDoc = {
         updateOne: {
@@ -339,6 +348,7 @@ const addMultipleExternalMark = async (req, res, next) => {
           update: {
             firstExaminer,
             secondExaminer,
+            totalExternal,
             total,
             isThirdExaminer: Math.abs(firstExaminer - secondExaminer) > 12,
           },
@@ -370,16 +380,12 @@ const addThirdExaminerMarks = async (req, res, next) => {
 
     const bulk = [];
     for (let m of marks) {
-      let { thirdExaminer, semester } = m;
-      let total, minimum, forty, sixty;
-
-      semester = Number(semester);
-      thirdExaminer = Number(thirdExaminer);
+      let total, sixty;
 
       // get internal marks and set total and minimum
       const result = await Mark.findOne({
         department: m.department,
-        semester,
+        semester: m.semester,
         roll: m.roll,
         courseName: m.courseName,
         courseCode: m.courseCode,
@@ -387,43 +393,38 @@ const addThirdExaminerMarks = async (req, res, next) => {
         currentSession: m.currentSession,
       });
 
-      if (result && result._id) {
-        const {
-          midOne,
-          midTwo,
-          attendance,
-          presentationOrAssignment,
-          firstExaminer,
-          secondExaminer,
-        } = result;
+      if (!result) {
+        throw createError(`Mark was not found for id ${m.roll}`);
+      }
 
-        let diffOne = Math.abs(firstExaminer - secondExaminer);
-        let diffTwo = Math.abs(secondExaminer - thirdExaminer);
-        let diffThree = Math.abs(firstExaminer - thirdExaminer);
+      const { totalInternal, firstExaminer, secondExaminer } = result;
+      const thirdExaminer = m.thirdExaminer;
 
-        minimum = Math.min(diffOne, diffTwo, diffThree);
+      let diffOne = Math.abs(firstExaminer - secondExaminer);
+      let diffTwo = Math.abs(secondExaminer - thirdExaminer);
+      let diffThree = Math.abs(firstExaminer - thirdExaminer);
 
-        switch (minimum) {
-          case Math.abs(firstExaminer - secondExaminer):
-            sixty = (firstExaminer + secondExaminer) / 2;
-            break;
-          case Math.abs(secondExaminer - thirdExaminer):
-            sixty = (secondExaminer + thirdExaminer) / 2;
-            break;
-          default:
-            sixty = (firstExaminer + thirdExaminer) / 2;
-        }
+      const minimum = Math.min(diffOne, diffTwo, diffThree);
 
-        forty = midOne + midTwo + attendance + presentationOrAssignment;
-      } else throw createError(`Mark was not found for id ${m.roll}`);
+      switch (minimum) {
+        case Math.abs(firstExaminer - secondExaminer):
+          sixty = (firstExaminer + secondExaminer) / 2;
+          break;
+        case Math.abs(secondExaminer - thirdExaminer):
+          sixty = (secondExaminer + thirdExaminer) / 2;
+          break;
+        default:
+          sixty = (firstExaminer + thirdExaminer) / 2;
+      }
 
-      total = forty + Number(sixty.toFixed(2));
+      const totalExternal = Number(sixty.toFixed(2));
+      total = totalInternal + totalExternal;
 
       let updateDoc = {
         updateOne: {
           filter: {
             department: m.department,
-            semester,
+            semester: m.semester,
             roll: m.roll,
             courseName: m.courseName,
             courseCode: m.courseCode,
@@ -432,8 +433,8 @@ const addThirdExaminerMarks = async (req, res, next) => {
           },
           update: {
             thirdExaminer,
-            minimum,
-            total: total.toFixed(2),
+            totalExternal,
+            total,
             isThirdExaminer: false,
           },
         },
@@ -462,24 +463,28 @@ const addSingleLabMark = async (req, res) => {
     const {
       department,
       semester,
+      currentSession,
       roll,
       courseName,
       courseCode,
-      labTotal,
-      currentSession,
+      tweentyPercent,
+      eightyPercent,
     } = req.body;
-    await LabMark.updateOne(
+
+    const result = await LabMark.updateOne(
       {
         department,
         semester,
+        currentSession,
         roll,
         courseName,
         courseCode,
-        currentSession,
       },
       {
         $set: {
-          labTotal,
+          tweentyPercent,
+          eightyPercent,
+          labTotal: tweentyPercent + eightyPercent,
           credit: 1.5,
         },
       },
@@ -515,21 +520,93 @@ const addMultipleLabMark = async (req, res) => {
           filter: {
             department: m.department,
             semester: m.semester,
+            currentSession: m.currentSession,
             roll: m.roll,
             courseName: m.courseName,
             courseCode: m.courseCode,
-            currentSession: m.currentSession,
           },
-          update: { labTotal: m.labTotal, credit: 1.5 },
+          update: {
+            tweentyPercent: m.tweentyPercent,
+            eightyPercent: m.eightyPercent,
+            labTotal: m.tweentyPercent + m.eightyPercent,
+            credit: 1.5,
+          },
           upsert: true,
         },
       };
       bulk.push(updateDoc);
     });
+
     await LabMark.bulkWrite(bulk);
 
     res.status(200).json({
       message: `Lab marks added for all student`,
+    });
+  } catch (err) {
+    res.status(500).json({
+      errors: {
+        common: {
+          message: err.message,
+        },
+      },
+    });
+  }
+};
+
+const addSingleLabImproveMark = async (req, res) => {
+  try {
+    const {
+      department,
+      semester,
+      currentSession,
+      roll,
+      courseName,
+      courseCode,
+      tweentyPercent,
+      eightyPercent,
+    } = req.body;
+
+    const prevMark = await LabMark.findOne({
+      department,
+      semester,
+      currentSession,
+      roll,
+      courseName,
+      courseCode,
+    });
+
+    if (!prevMark) {
+      throw createError("This course was not found");
+    }
+
+    const result = await LabImprove.updateOne(
+      {
+        department,
+        semester,
+        currentSession,
+        roll,
+        courseName,
+        courseCode,
+      },
+      {
+        $set: {
+          tweentyPercent,
+          eightyPercent,
+          labTotal: tweentyPercent + eightyPercent,
+          credit: 1.5,
+        },
+      },
+      {
+        upsert: true,
+      }
+    );
+
+    if (!result) {
+      throw createError("Failed to add lab improve mark");
+    }
+
+    res.status(201).json({
+      message: "Lab improve mark successfully added",
     });
   } catch (err) {
     res.status(500).json({
@@ -548,31 +625,61 @@ const addSingleImproveMark = async (req, res) => {
     const {
       department,
       semester,
+      currentSession,
       roll,
-      courseId,
+      courseName,
+      courseCode,
       firstExaminer,
       secondExaminer,
     } = req.body;
-    // 64e384d6b12e86454d8d2ce4
-    // akhane number check kore mul mark ta update kore dibo
-    await ImproveMark.updateOne(
+
+    const semesterMark = await Mark.findOne({
+      department,
+      semester,
+      currentSession,
+      roll,
+      courseCode,
+      courseName,
+    });
+
+    if (!semesterMark) {
+      throw createError("This course was not found");
+    }
+
+    const { totalInternal } = semesterMark;
+
+    const sixty = (Number(firstExaminer) + Number(secondExaminer)) / 2;
+    const totalExternal = Number(sixty.toFixed(2));
+    const total = totalInternal + totalExternal;
+
+    const result = await ImproveMark.updateOne(
       {
         department: department,
         semester: semester,
+        currentSession,
         roll: roll,
-        courseId: courseId,
+        courseName,
+        courseCode,
       },
       {
         $set: {
+          credit: 3,
           firstExaminer,
           secondExaminer,
-          isThirdExaminer: Math.abs(firstExaminer - secondExaminer) >= 12,
+          totalInternal,
+          totalExternal,
+          total,
+          isThirdExaminer: Math.abs(firstExaminer - secondExaminer) > 12,
         },
       },
       {
         upsert: true,
       }
     );
+
+    if (!result?.acknowledged) {
+      throw createError("Improve mark addition failed");
+    }
 
     res.status(200).send({
       message: `Improve mark added`,
@@ -591,23 +698,76 @@ const addSingleImproveMark = async (req, res) => {
 // add third examiner mark for theory course improvement
 const addSingleThirdImproveMark = async (req, res) => {
   try {
-    const { department, semester, roll, courseId, thirdExaminer } = req.body;
-    // 64e384d6b12e86454d8d2ce4
-    // akhane number check kore mul mark ta update kore dibo
-    await ImproveMark.updateOne(
+    const {
+      department,
+      semester,
+      currentSession,
+      roll,
+      courseName,
+      courseCode,
+      thirdExaminer,
+    } = req.body;
+
+    const prevMark = await ImproveMark.findOne({
+      department,
+      semester,
+      currentSession,
+      isThirdExaminer: true,
+      roll,
+      courseName,
+      courseCode,
+    });
+
+    if (!prevMark) {
+      throw createError("This course was not found");
+    }
+
+    const { totalInternal, firstExaminer, secondExaminer } = prevMark;
+
+    const diffOne = Math.abs(firstExaminer - secondExaminer);
+    const diffTwo = Math.abs(secondExaminer - thirdExaminer);
+    const diffThree = Math.abs(firstExaminer - thirdExaminer);
+
+    const minimum = Math.min(diffOne, diffTwo, diffThree);
+    let sixty;
+
+    switch (minimum) {
+      case Math.abs(firstExaminer - secondExaminer):
+        sixty = (firstExaminer + secondExaminer) / 2;
+        break;
+      case Math.abs(secondExaminer - thirdExaminer):
+        sixty = (secondExaminer + thirdExaminer) / 2;
+        break;
+      default:
+        sixty = (firstExaminer + thirdExaminer) / 2;
+    }
+
+    const totalExternal = Number(sixty.toFixed(2));
+    const total = totalInternal + totalExternal;
+
+    const result = await ImproveMark.updateOne(
       {
-        department: department,
-        semester: semester,
-        roll: roll,
-        courseId: courseId,
+        department,
+        semester,
+        currentSession,
+        isThirdExaminer: true,
+        roll,
+        courseName,
+        courseCode,
       },
       {
         $set: {
           thirdExaminer,
+          totalExternal,
+          total,
           isThirdExaminer: false,
         },
       }
     );
+
+    if (!result?.acknowledged) {
+      throw createError("Improve mark addition failed");
+    }
 
     res.status(200).send({
       message: `Third examiner mark added for improvements`,
@@ -639,4 +799,5 @@ module.exports = {
   addMultipleLabMark,
   addSingleImproveMark,
   addSingleThirdImproveMark,
+  addSingleLabImproveMark,
 };

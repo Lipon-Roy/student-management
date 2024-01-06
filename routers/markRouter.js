@@ -24,6 +24,7 @@ const {
   addThirdExaminerMarks,
   getImproveMark,
   addSingleThirdImproveMark,
+  addSingleLabImproveMark,
 } = require("../controllers/markController");
 
 const {
@@ -63,24 +64,6 @@ const {
 
 // create router
 const router = express.Router();
-
-// get all marks
-router.get("/", getAllMarks);
-
-// get single mark
-router.get("/:dept/:semester/:courseName/:courseCode/:roll", getSingleMark);
-
-// get mark which are isThirdExaminer true
-router.get("/:dept/:semester/:courseName/:courseCode", getIsThirdExaminer);
-
-// get improve third examiner mark
-router.get(
-  "/improve/:dept/:semester/:courseName/:courseCode/:roll",
-  getImproveMark
-);
-
-// get all lab marks
-router.get("/lab", getLabMarks);
 
 // add all marks for all student for the individual session
 router.post("/", addMarkValidators, addMarksValidationHandler, addMarks);
@@ -141,6 +124,13 @@ router.put(
   addMultipleLabMark
 );
 
+router.put(
+  "/lab/improve/single",
+  addSingleLabMarkValidators,
+  addSingleLabMarkValidationHandler,
+  addSingleLabImproveMark
+);
+
 // add theory course improvements mark for single student
 router.put(
   "/improve/single",
@@ -151,5 +141,26 @@ router.put(
 
 // add third examiner mark for theory course improvements
 router.put("/improve/third", addSingleThirdImproveMark);
+
+// get multiple mark
+router.get("/:dept/:session/:semester/:courseName/:courseCode", getAllMarks);
+
+// get single mark
+router.get(
+  "/:dept/:session/:semester/:courseName/:courseCode/:roll",
+  getSingleMark
+);
+
+// get mark which are isThirdExaminer true
+router.get("/:dept/:semester/:courseName/:courseCode", getIsThirdExaminer);
+
+// get improve third examiner mark
+router.get(
+  "/improve/:dept/:semester/:courseName/:courseCode/:roll",
+  getImproveMark
+);
+
+// get all lab marks
+router.get("/lab", getLabMarks);
 
 module.exports = router;
