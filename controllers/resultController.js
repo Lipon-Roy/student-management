@@ -1382,8 +1382,8 @@ const getTabulationSheetPerYear = async (req, res, next) => {
               in: {
                 courseCode: "$$lab.courseCode",
                 courseCredit: "$$lab.credit",
-                internalMark: "$$lab.tweentyPercent",
-                finalMark: "$$lab.eightyPercent",
+                internalMark: "$$lab.totalInternal",
+                finalMark: "$$lab.totalExternal",
                 totalMark: "$$lab.labTotal",
                 LG: {
                   $switch: {
@@ -1580,8 +1580,8 @@ const getTabulationSheetPerYear = async (req, res, next) => {
               in: {
                 courseCode: "$$improve.courseCode",
                 courseCredit: "$$improve.credit",
-                internalMark: "$$improve.tweentyPercent",
-                finalMark: "$$improve.eightyPercent",
+                internalMark: "$$improve.totalInternal",
+                finalMark: "$$improve.totalExternal",
                 totalMark: "$$improve.labTotal",
                 LG: {
                   $switch: {
