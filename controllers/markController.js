@@ -467,9 +467,14 @@ const addSingleLabMark = async (req, res) => {
       roll,
       courseName,
       courseCode,
-      tweentyPercent,
-      eightyPercent,
+      attendance,
+      labReport,
+      continuousAssesment,
+      finalExamination
     } = req.body;
+
+    const totalInternal = attendance + labReport + continuousAssesment;
+    const totalExternal = finalExamination;
 
     const result = await LabMark.updateOne(
       {
@@ -482,9 +487,12 @@ const addSingleLabMark = async (req, res) => {
       },
       {
         $set: {
-          tweentyPercent,
-          eightyPercent,
-          labTotal: tweentyPercent + eightyPercent,
+          attendance,
+          labReport,
+          continuousAssesment,
+          totalInternal,
+          totalExternal,
+          labTotal: totalInternal + totalExternal,
           credit: 1.5,
         },
       },
@@ -515,6 +523,10 @@ const addMultipleLabMark = async (req, res) => {
 
     const bulk = [];
     marks.forEach((m) => {
+      const {attendance, labReport, continuousAssesment, finalExamination} = m;
+      const totalInternal = attendance + labReport + continuousAssesment;
+      const totalExternal = finalExamination;
+
       let updateDoc = {
         updateOne: {
           filter: {
@@ -526,9 +538,12 @@ const addMultipleLabMark = async (req, res) => {
             courseCode: m.courseCode,
           },
           update: {
-            tweentyPercent: m.tweentyPercent,
-            eightyPercent: m.eightyPercent,
-            labTotal: m.tweentyPercent + m.eightyPercent,
+            attendance,
+            labReport,
+            continuousAssesment,
+            totalInternal,
+            totalExternal,
+            labTotal: totalInternal + totalExternal,
             credit: 1.5,
           },
           upsert: true,
@@ -562,9 +577,14 @@ const addSingleLabImproveMark = async (req, res) => {
       roll,
       courseName,
       courseCode,
-      tweentyPercent,
-      eightyPercent,
+      attendance,
+      labReport,
+      continuousAssesment,
+      finalExamination
     } = req.body;
+
+    const totalInternal = attendance + labReport + continuousAssesment;
+    const totalExternal = finalExamination;
 
     const prevMark = await LabMark.findOne({
       department,
@@ -590,9 +610,12 @@ const addSingleLabImproveMark = async (req, res) => {
       },
       {
         $set: {
-          tweentyPercent,
-          eightyPercent,
-          labTotal: tweentyPercent + eightyPercent,
+          attendance,
+          labReport,
+          continuousAssesment,
+          totalInternal,
+          totalExternal,
+          labTotal: totalInternal + totalExternal,
           credit: 1.5,
         },
       },

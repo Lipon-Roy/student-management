@@ -47,25 +47,49 @@ const addSingleLabMarkValidators = [
     .trim()
     .isLength({ min: 4 })
     .withMessage("Course code is required"),
-  check("tweentyPercent")
+  check("attendance")
     .isDecimal()
     .withMessage("Mark must be number")
     .custom(async (value) => {
       try {
-        if (value < 0 || value > 20) {
-          throw createError("Lab tweenty percent mark must be 0 to 20");
+        if (value < 0 || value > 10) {
+          throw createError("Lab attendance mark must be 0 to 10");
         }
       } catch (err) {
         throw createError(err.message);
       }
     }),
-  check("eightyPercent")
+  check("labReport")
     .isDecimal()
     .withMessage("Mark must be number")
     .custom(async (value) => {
       try {
-        if (value < 0 || value > 80) {
-          throw createError("Lab eighty percent mark must be 0 to 80");
+        if (value < 0 || value > 10) {
+          throw createError("Lab report mark must be 0 to 10");
+        }
+      } catch (err) {
+        throw createError(err.message);
+      }
+    }),
+  check("continuousAssesment")
+    .isDecimal()
+    .withMessage("Mark must be number")
+    .custom(async (value) => {
+      try {
+        if (value < 0 || value > 20) {
+          throw createError("Lab continuous assessment mark must be 0 to 20");
+        }
+      } catch (err) {
+        throw createError(err.message);
+      }
+    }),
+  check("finalExamination")
+    .isDecimal()
+    .withMessage("Mark must be number")
+    .custom(async (value) => {
+      try {
+        if (value < 0 || value > 60) {
+          throw createError("Lab final examination mark must be 0 to 60");
         }
       } catch (err) {
         throw createError(err.message);

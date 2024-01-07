@@ -33,16 +33,34 @@ const labMarkSchema = mongoose.Schema({
     type: Number,
     required: true,
   },
-  tweentyPercent: {
+  attendance: {
     type: Number,
     min: 0,
     max: 20,
     required: true,
   },
-  eightyPercent: {
+  labReport: {
     type: Number,
     min: 0,
-    max: 80,
+    max: 10,
+    required: true,
+  },
+  continuousAssesment: {
+    type: Number,
+    min: 0,
+    max: 20,
+    required: true
+  },
+  totalInternal: {
+    type: Number,
+    min: 0,
+    max: 40,
+    required: true,
+  },
+  totalExternal: {
+    type: Number,
+    min: 0,
+    max: 60,
     required: true,
   },
   labTotal: {
