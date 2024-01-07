@@ -5500,13 +5500,13 @@ const getTabulationSheetPerYear = async (req, res, next) => {
 
     const marks = {
       firstSemester:
-        courseMarks[0]._id < courseMarks[1]._id
-          ? courseMarks[0].marksWithImprove
-          : courseMarks[1].marksWithImprove,
+        courseMarks[0]?._id < courseMarks[1]?._id
+          ? courseMarks[0]?.marksWithImprove
+          : courseMarks[1]?.marksWithImprove,
       secondSemester:
-        courseMarks[0]._id > courseMarks[1]._id
-          ? courseMarks[0].marksWithImprove
-          : courseMarks[1].marksWithImprove,
+        courseMarks[0]?._id > courseMarks[1]?._id
+          ? courseMarks[0]?.marksWithImprove
+          : courseMarks[1]?.marksWithImprove,
     };
 
     res.status(200).json({
@@ -5514,7 +5514,7 @@ const getTabulationSheetPerYear = async (req, res, next) => {
         marks: marks,
         regularPoints: regularPoints[0],
         improvePoints: improvePoints[0]
-      },
+      }
     });
   } catch (err) {
     next(createError(err.message));
