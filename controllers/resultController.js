@@ -937,14 +937,14 @@ const getImproveMarkTabulation = async (req, res, next) => {
 
 const getSemesterTranscript = async (req, res, next) => {
   try {
-    const { dept, session, roll } = req.params;
+    const { dept, session, semester, roll } = req.params;
 
     const semesterTranscript = await Mark.aggregate([
       {
         $match: {
-          // semester o lagbe match korar jonno
           department: dept,
           currentSession: session,
+          semester: Number(semester),
           roll: roll,
         },
       },
@@ -967,6 +967,7 @@ const getSemesterTranscript = async (req, res, next) => {
               $match: {
                 department: dept,
                 currentSession: session,
+                semester: Number(semester),
                 roll,
               },
             },
@@ -1015,7 +1016,7 @@ const getSemesterTranscript = async (req, res, next) => {
                     default: "F",
                   },
                 },
-                CGP: {
+                GP: {
                   $switch: {
                     branches: [
                       { case: { $gte: ["$$course.total", 80] }, then: 4.0 },
@@ -1085,7 +1086,7 @@ const getSemesterTranscript = async (req, res, next) => {
                     default: "F",
                   },
                 },
-                CGP: {
+                GP: {
                   $switch: {
                     branches: [
                       { case: { $gte: ["$$lab.labTotal", 80] }, then: 4.0 },
@@ -1135,7 +1136,7 @@ const getSemesterTranscript = async (req, res, next) => {
               in: {
                 $sum: [
                   "$$value",
-                  { $multiply: ["$$this.courseCredit", "$$this.CGP"] },
+                  { $multiply: ["$$this.courseCredit", "$$this.GP"] },
                 ],
               },
             },

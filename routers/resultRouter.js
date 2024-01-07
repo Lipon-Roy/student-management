@@ -12,7 +12,7 @@ const {
 
 const router = express.Router();
 
-router.get("/semester-transcript/:dept/:session/:roll", getSemesterTranscript);
+router.get("/semester-transcript/:dept/:session/:semester/:roll", getSemesterTranscript);
 
 router.get(
   "/tabulation-sheet-per-year/:year/:dept/:session/:roll",
